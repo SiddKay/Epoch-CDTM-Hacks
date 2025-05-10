@@ -9,8 +9,8 @@ def extract_text_and_keypoints(image_bytes: bytes):
     return "Extracted text", "Key points"
 
 @router.post("/upload-image")
-async def upload_image(image: UploadFile = File(...)):
-    image_bytes = await image.read()
+async def upload_image(file: UploadFile = File(...)):
+    image_bytes = await file.read()
     text, keypoints = extract_text_and_keypoints(image_bytes)
-    save_to_supabase(image_bytes, text, keypoints)
+    save_to_supabase(image_bytes, file, text, keypoints)
     return {"text": text, "keypoints": keypoints} 

@@ -1,53 +1,60 @@
-# Placeholder for Supabase client setup
+import uuid
 
-import os
+from starlette.datastructures import UploadFile
 from supabase import create_client, Client
-from typing import List
+from datetime import datetime, timezone
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-BUCKET_NAME = os.environ.get("SUPABASE_BUCKET", "images")
-TABLE_NAME = os.environ.get("SUPABASE_TABLE", "documents")
+SUPABASE_URL = "https://oaiygtecjjepjuebfeai.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9haXlndGVjamplcGp1ZWJmZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MzI2NzksImV4cCI6MjA2MjQwODY3OX0.uRXx1L6THPziMWkmusY9zkdMnzBJWrP4ay4NCHVQ_Ic"
 
 
 def get_supabase_client() -> Client:
     """Initializes and returns a Supabase client using environment variables."""
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        raise ValueError("Supabase URL and Key must be set in environment variables.")
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-def save_to_supabase(image_bytes: bytes, text: str, keypoints: List[str]):
+def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints: str):
     """
-    Uploads the image to Supabase Storage and saves metadata (text, keypoints, image URL) to a table.
+    Uploads the image to Supabase Storage and saves file metadata to the grandma_files table.
     """
     supabase = get_supabase_client()
 
-    # Generate a unique file name
-    import uuid
+    # Generate a unique file path
     image_id = str(uuid.uuid4())
-    image_path = f"uploads/{image_id}.png"
+    file_path = f"{image_id}_{image.filename}"
 
-    # Upload image to storage bucket
-    storage_response = supabase.storage.from_(BUCKET_NAME).upload(
-        path=image_path,
-        file=image_bytes,
-        file_options={"content-type": "image/png", "upsert": True}
-    )
-    if storage_response.get("error"):
-        raise Exception(f"Failed to upload image: {storage_response['error']['message']}")
+    # Upload image to Supabase storage
+    try:
+        storage_response = supabase.storage.from_("uploads").upload(
+            path=file_path,
+            file=image_bytes,
+            file_options={
+                "content-type": image.content_type,
+                "x-upsert": "true"
+            },
+        )
+    except Exception as e:
+        raise Exception(f"Failed to upload image to Supabase: {str(e)}")
 
-    # Get public URL for the image
-    public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(image_path)
+    # Get public URL of uploaded image
+    preview_url = supabase.storage.from_("uploads").get_public_url(file_path)
 
-    # Insert metadata into the table
+    # Prepare metadata for database
     data = {
-        "image_url": public_url,
+        "file_name": image.filename,
+        "file_path": file_path,
+        "file_type": image.content_type,
+        "file_size": image.size,
+        "upload_date": datetime.now(timezone.utc).isoformat(),
+        "preview_url": preview_url,
         "text": text,
         "keypoints": keypoints,
     }
-    insert_response = supabase.table(TABLE_NAME).insert(data).execute()
-    if insert_response.get("error"):
-        raise Exception(f"Failed to insert metadata: {insert_response['error']['message']}")
 
-    return {"image_url": public_url, "text": text, "keypoints": keypoints} 
+    # Insert metadata into Supabase table
+    insert_response = supabase.table("grandma_files").insert(data).execute()
+
+    if not insert_response.data:
+        raise Exception(f"Failed to insert metadata into database: {insert_response}")
+
+    return {"preview_url": preview_url, **data}
