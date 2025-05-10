@@ -1,4 +1,3 @@
-
 import { useContext } from "react";
 import { HealthcareContext } from "@/contexts/HealthcareContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +20,7 @@ const PatientInfoCard = () => {
   return (
     <Card className="bg-[#1A1F2C] border-0 shadow-lg">
       <CardHeader className="bg-muted pb-2">
-        <CardTitle className="text-[#8b5cf6] text-xl">
+        <CardTitle className="text-healthcare-primary text-xl">
           {language === "en" ? "Patient Information" : "Patienteninformation"}
         </CardTitle>
       </CardHeader>

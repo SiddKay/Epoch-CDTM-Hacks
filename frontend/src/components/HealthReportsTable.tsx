@@ -2,7 +2,7 @@ import MarkdownTable from "./MarkdownTable";
 
 // SAMPLE DATA: Health Reports for Grandma
 const healthReportsMarkdown = `
-| Measurement sadswd     | Value              | Unit    | Date       | Notes                           |
+| Measurement      | Value              | Unit    | Date       | Notes                           |
 |-------------------|--------------------|---------|------------|---------------------------------|
 | Blood Pressure    | 130/85             | mmHg    | 2024-07-28 | Slightly elevated             |
 | Heart Rate        | 72                 | bpm     | 2024-07-28 | Normal resting rate           |
@@ -22,8 +22,7 @@ const HealthReportsTable = () => {
   return (
     <MarkdownTable 
       markdownContent={healthReportsMarkdown}
-      title="Health Measurements"
-      // Comment: Using sample markdown data for health reports
+      // title removed, handled by dropdown
     />
   );
 };
