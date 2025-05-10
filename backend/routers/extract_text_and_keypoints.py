@@ -106,8 +106,8 @@ Text:
     validation_result = await chain_validate.ainvoke(
         {"text": extracted_text, "doc_type": document_type})
 
-    # 2. Check Recency (last 3 months)
-    prompt_recency_text = """Analyze the following text to determine if the information or events described seem to be from within the last 3 months from today.
+    # 2. Check Recency (last year)
+    prompt_recency_text = """Analyze the following text to determine if the information or events described seem to be from within the last year from today.
 Consider any dates, mentions of time periods, or contextual clues.
 Respond with only 'recent', 'not recent', or 'unknown'. TODAY'S DATE IS {today_date}.
 
@@ -162,7 +162,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
 
     if recency_result and recency_result.lower() == 'not recent':
         rejection_reasons.append(
-            "it was determined to be not recent (older than the last 3 months)")
+            "it was determined to be not recent (older than the one year ago)")
 
     if clarity_score is None:  # Should ideally not happen if no API key error and llm is present
         rejection_reasons.append("the clarity score could not be determined")
@@ -184,7 +184,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
 Generate a polite, single-sentence message for the user. This message should clearly state the main problem(s) and suggest a corrective action.
 For example:
 - If the type is wrong or unconfirmed, suggest uploading the correct document type or a clearer image.
-- If the document is not recent, suggest uploading a newer one (from the last 3 months).
+- If the document is not recent, suggest uploading a newer one (earlier than one year ago).
 - If clarity is low, suggest re-uploading a clearer, more legible photo.
 You are speaking with non-technical users, so please explain the issues as simply as possible, in a way that non-technical users can understand. No complex words or jargon!
 For example, instead of saying the clearance score is low, say the text is blurry, and ask the user to make photo again.
