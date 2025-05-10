@@ -39,13 +39,13 @@ const Header = ({ type }: { type: "patient" | "doctor" }) => {
         <div className="flex items-center space-x-4 md:space-x-6">
           {type === "patient" ? (
             <Link to="/doctor">
-              <Button className="bg-blue-action text-white rounded-lg shadow-md hover:bg-sky-400 transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
+              <Button className="bg-blue-heading border-blue-heading text-white rounded-lg shadow-md hover:bg-blue-heading/80 transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
                 {t.viewDoctorDashboard}
               </Button>
             </Link>
           ) : (
             <Link to="/">
-              <Button className="bg-blue-action text-white rounded-lg shadow-md hover:bg-sky-400 transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
+              <Button className="bg-blue-heading border-blue-heading text-white rounded-lg shadow-md hover:bg-blue-heading/80 transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
                 {t.backToPatient}
               </Button>
             </Link>

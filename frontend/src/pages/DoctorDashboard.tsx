@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PatientInfoCard from "@/components/PatientInfoCard";
 import { HealthcareContext } from "@/contexts/HealthcareContext";
@@ -16,6 +16,12 @@ interface ReportSection {
   content: string;
 }
 
+const markdownLinkRenderer = (props: any) => (
+  <a href={props.href} target="_blank" rel="noopener noreferrer" {...props}>
+    {props.children}
+  </a>
+);
+
 const DoctorDashboard = () => {
   const { language } = useContext(HealthcareContext);
   const [isRecording, setIsRecording] = useState(false);
@@ -25,6 +31,9 @@ const DoctorDashboard = () => {
   const [reportSectionsArray, setReportSectionsArray] = useState<ReportSection[]>([]);
   const [referencesSection, setReferencesSection] = useState<ReportSection | null>(null);
   const [reportSectionOpenStates, setReportSectionOpenStates] = useState<Record<string, boolean>>({});
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showStatus, setShowStatus] = useState(false);
+  const statusTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchAndParseReport = async () => {
@@ -149,9 +158,21 @@ const DoctorDashboard = () => {
   
   const handleExportPDF = () => toast({ title: "PDF Export", description: "PDF export function." });
   const handlePrint = () => window.print();
-  const handleToggleRecording = () => { 
-    setIsRecording(prev => !prev); 
-    // If stopping, the useEffect above will reset recordingTime
+  const handleToggleRecording = () => {
+    setIsRecording(prev => {
+      const next = !prev;
+      if (next) {
+        setStatusMessage("Recording");
+        setShowStatus(true);
+        if (statusTimeout.current) clearTimeout(statusTimeout.current);
+      } else {
+        setStatusMessage("Recording stopped.");
+        setShowStatus(true);
+        if (statusTimeout.current) clearTimeout(statusTimeout.current);
+        statusTimeout.current = setTimeout(() => setShowStatus(false), 1500);
+      }
+      return next;
+    });
   };
 
   return (
@@ -176,6 +197,7 @@ const DoctorDashboard = () => {
             >
               <Printer className="mr-2 h-5 w-5" />Print
             </Button>
+            {/*
             <Button 
               variant={isRecording ? "destructive" : "outline"} 
               onClick={handleToggleRecording} 
@@ -183,6 +205,7 @@ const DoctorDashboard = () => {
             >
               {isRecording ? (<><MicOff className="mr-2 h-5 w-5" />Stop ({recordingTime}s)</>) : (<><Mic className="mr-2 h-5 w-5" />Voice Note</>)}
             </Button>
+            */}
           </div>
         </div>
         
@@ -194,53 +217,103 @@ const DoctorDashboard = () => {
               <h2 className="text-3xl lg:text-4xl font-bold text-blue-heading mb-8">{reportMainTitle}</h2>
             </div>
           )}
-          {reportSectionsArray.map((section) => (
-            <div key={section.id} className="space-y-2">
-              <button
-                className="flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 rounded-md hover:bg-card/50 transition-colors duration-150"
-                onClick={() => toggleReportSection(section.id)}
-                aria-expanded={reportSectionOpenStates[section.id]}
+          {reportSectionsArray.map((section) => {
+            const isOpen = reportSectionOpenStates[section.id];
+            return (
+              <div
+                key={section.id}
+                className={
+                  isOpen
+                    ? "bg-card rounded-lg shadow-lg transition-all duration-300"
+                    : "transition-all duration-300"
+                }
               >
-                <span className="text-2xl font-semibold text-blue-heading pl-6">{section.title}</span>
-                <ChevronDown 
-                  className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${reportSectionOpenStates[section.id] ? 'transform rotate-180' : ''}`} 
-                />
-              </button>
-              {reportSectionOpenStates[section.id] && section.content && (
-                <div className="bg-card p-6 rounded-md shadow-lg prose dark:prose-invert max-w-none 
-                                prose-headings:text-blue-heading prose-p:text-foreground 
-                                prose-strong:text-foreground prose-li:text-foreground 
-                                prose-a:text-blue-action hover:prose-a:underline">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  className={`flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 ${isOpen ? 'rounded-t-lg bg-card' : ''} ${!isOpen ? 'bg-transparent' : ''} transition-colors duration-150`}
+                  onClick={() => toggleReportSection(section.id)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-2xl font-semibold text-blue-heading pl-6">{section.title}</span>
+                  <ChevronDown 
+                    className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${isOpen ? 'transform rotate-180' : ''}`} 
+                  />
+                </button>
+                {isOpen && section.content && (
+                  <div className="p-6 rounded-b-lg prose dark:prose-invert max-w-none 
+                                  prose-headings:text-blue-heading prose-p:text-foreground 
+                                  prose-strong:text-foreground prose-li:text-foreground 
+                                  prose-a:text-blue-action hover:prose-a:underline">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: markdownLinkRenderer }}>{section.content}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-          {referencesSection && (
-            <div key={referencesSection.id} className="space-y-2 mt-10 pt-8 border-t border-border">
-              <button
-                className="flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 rounded-md hover:bg-card/50 transition-colors duration-150"
-                onClick={() => toggleReportSection(referencesSection.id)}
-                aria-expanded={reportSectionOpenStates[referencesSection.id]}
+          {referencesSection && (() => {
+            const isOpen = reportSectionOpenStates[referencesSection.id];
+            return (
+              <div
+                key={referencesSection.id}
+                className={
+                  isOpen
+                    ? "bg-card rounded-lg shadow-lg transition-all duration-300 mt-10 pt-8 border-t border-border"
+                    : "transition-all duration-300 mt-10 pt-8 border-t border-border"
+                }
               >
-                <span className="text-2xl font-semibold text-blue-heading pl-6">{referencesSection.title}</span>
-                <ChevronDown 
-                  className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${reportSectionOpenStates[referencesSection.id] ? 'transform rotate-180' : ''}`} 
-                />
-              </button>
-              {reportSectionOpenStates[referencesSection.id] && referencesSection.content && (
-                <div className="bg-card p-6 rounded-md shadow-lg prose dark:prose-invert max-w-none 
-                                prose-headings:text-blue-heading prose-p:text-foreground 
-                                prose-strong:text-foreground prose-li:text-foreground 
-                                prose-a:text-blue-action hover:prose-a:underline">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{referencesSection.content}</ReactMarkdown>
-                </div>
-              )}
-            </div>
-          )}
+                <button
+                  className={`flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 ${isOpen ? 'rounded-t-lg bg-card' : ''} ${!isOpen ? 'bg-transparent' : ''} transition-colors duration-150`}
+                  onClick={() => toggleReportSection(referencesSection.id)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-2xl font-semibold text-blue-heading pl-6">{referencesSection.title}</span>
+                  <ChevronDown 
+                    className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${isOpen ? 'transform rotate-180' : ''}`} 
+                  />
+                </button>
+                {isOpen && referencesSection.content && (
+                  <div className="p-6 rounded-b-lg prose dark:prose-invert max-w-none 
+                                  prose-headings:text-blue-heading prose-p:text-foreground 
+                                  prose-strong:text-foreground prose-li:text-foreground 
+                                  prose-a:text-blue-action hover:prose-a:underline">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: markdownLinkRenderer }}>{referencesSection.content}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </main>
+
+      {/* Floating Voice Record Button and Status */}
+      <div className="fixed z-50 bottom-8 right-8 flex items-center">
+        {/* Status message */}
+        <div className={`mr-[40px] transition-opacity duration-700 text-lg font-medium select-none ${showStatus ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+             style={{ minWidth: '100px', color: isRecording ? '#f87171' : '#60a5fa' }}>
+          {statusMessage}
+        </div>
+        <button
+          onClick={handleToggleRecording}
+          aria-pressed={isRecording}
+          aria-label={isRecording ? 'Stop voice recording' : 'Start voice recording'}
+          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 transition-all duration-200
+            ${isRecording ? 'bg-red-600 border-red-700 animate-pulse-glow' : 'bg-blue-heading border-blue-heading hover:bg-blue-heading/80'}
+            focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-heading/40`}
+          style={{ boxShadow: isRecording ? '0 0 0 8px rgba(220,38,38,0.25), 0 4px 24px 0 rgba(0,0,0,0.25)' : '0 4px 24px 0 rgba(0,0,0,0.25)' }}
+        >
+          <Mic className="h-10 w-10 text-white" />
+          <span className="sr-only">{isRecording ? 'Stop voice recording' : 'Start voice recording'}</span>
+        </button>
+      </div>
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 8px rgba(220,38,38,0.25), 0 4px 24px 0 rgba(0,0,0,0.25); }
+          50% { box-shadow: 0 0 0 20px rgba(220,38,38,0.15), 0 4px 24px 0 rgba(0,0,0,0.25); }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 1.2s infinite;
+        }
+      `}</style>
     </div>
   );
 };

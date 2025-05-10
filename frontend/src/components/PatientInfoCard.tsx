@@ -9,7 +9,7 @@ const samplePatientDataMarkdown = `
 | Field             | Value              |
 |-------------------|--------------------|
 | Name              | Grandma            |
-| Date of Birth     | 1955-07-15        |
+| Date of Birth     | 15/07/1955        |
 | Gender            | Female            |
 | Insurance Number  | INS-GRDMA-19550715 |
 `;
