@@ -296,9 +296,22 @@ async def get_grandma_report():
 async def generate_save_report(all_texts_concatenated: str):
     try:
         report = await generate_combined_medical_summary_md(all_texts_concatenated)
+        if not report:
+            print("Warning: No report generated. Skipping save.")
+            return
+        report = clean_report(report)
         save_grandma_report(report)
     except Exception as e:
         print(f"Error in generate_save_report: {str(e)}")
+
+
+def clean_report(report: str) -> str:
+    report = report.strip()
+    if report.startswith("```markdown"):
+        report = report[len("```markdown"):].strip()
+    if report.endswith("```"):
+        report = report[:-len("```")]
+    return report
 
 
 MODEL = "gpt-4o-mini-realtime-preview"
