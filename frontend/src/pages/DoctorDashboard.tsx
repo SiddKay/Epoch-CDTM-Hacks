@@ -127,6 +127,19 @@ const DoctorDashboard = () => {
     fetchAndParseReport();
   }, []);
 
+  // Effect for recording timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined = undefined;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingTime(prevTime => prevTime + 1);
+      }, 1000);
+    } else if (!isRecording && recordingTime !== 0) {
+      setRecordingTime(0); // Reset time when stopped
+    }
+    return () => clearInterval(interval); // Cleanup interval on unmount or before re-running effect
+  }, [isRecording, recordingTime]); // Rerun when isRecording changes
+
   const toggleReportSection = (sectionId: string) => {
     setReportSectionOpenStates(prevStates => ({
       ...prevStates,
@@ -138,61 +151,89 @@ const DoctorDashboard = () => {
   const handlePrint = () => window.print();
   const handleToggleRecording = () => { 
     setIsRecording(prev => !prev); 
+    // If stopping, the useEffect above will reset recordingTime
   };
 
   return (
-    <div className="min-h-screen bg-[#0f111a] text-white flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header type="doctor" />
       
-      <main className="flex-1 container max-w-7xl mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-healthcare-primary">Patient Summary</h1>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={handleExportPDF} className="text-healthcare-primary border-healthcare-primary hover:bg-healthcare-primary/10"><FileText className="mr-2 h-4 w-4" />Export PDF</Button>
-            <Button variant="outline" onClick={handlePrint} className="text-healthcare-primary border-healthcare-primary hover:bg-healthcare-primary/10"><Printer className="mr-2 h-4 w-4" />Print</Button>
-            <Button variant={isRecording ? "destructive" : "outline"} onClick={handleToggleRecording} className={isRecording ? "" : "text-healthcare-primary border-healthcare-primary hover:bg-healthcare-primary/10"}>
-              {isRecording ? (<><MicOff className="mr-2 h-4 w-4" />Stop Recording ({recordingTime}s)</>) : (<><Mic className="mr-2 h-4 w-4" />Voice Note</>)}
+      <main className="flex-1 container max-w-7xl mx-auto py-12 px-4 md:px-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
+          <h1 className="text-4xl lg:text-5xl font-bold text-blue-heading mb-4 sm:mb-0">Patient Summary</h1>
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={handleExportPDF} 
+              className="text-blue-action border-blue-action hover:bg-blue-action hover:text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <FileText className="mr-2 h-5 w-5" />Export PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handlePrint} 
+              className="text-blue-action border-blue-action hover:bg-blue-action hover:text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Printer className="mr-2 h-5 w-5" />Print
+            </Button>
+            <Button 
+              variant={isRecording ? "destructive" : "outline"} 
+              onClick={handleToggleRecording} 
+              className={`rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ${isRecording ? "bg-red-600 hover:bg-red-700 text-white" : "text-blue-action border-blue-action hover:bg-blue-action hover:text-white"}`}
+            >
+              {isRecording ? (<><MicOff className="mr-2 h-5 w-5" />Stop ({recordingTime}s)</>) : (<><Mic className="mr-2 h-5 w-5" />Voice Note</>)}
             </Button>
           </div>
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-10">
           <PatientInfoCard />
 
           {reportMainTitle && (
-            <h2 className="text-3xl font-bold text-healthcare-primary mt-8 mb-6">{reportMainTitle}</h2>
+            <div className="border-t border-border pt-10 mt-12">
+              <h2 className="text-3xl lg:text-4xl font-bold text-blue-heading mb-8">{reportMainTitle}</h2>
+            </div>
           )}
           {reportSectionsArray.map((section) => (
-            <div key={section.id} className="space-y-1">
+            <div key={section.id} className="space-y-2">
               <button
-                className="flex items-center w-full text-left focus:outline-none text-xl font-semibold text-healthcare-primary mb-2 hover:underline"
+                className="flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 rounded-md hover:bg-card/50 transition-colors duration-150"
                 onClick={() => toggleReportSection(section.id)}
                 aria-expanded={reportSectionOpenStates[section.id]}
               >
-                {section.title} {/* Display clean title */}
-                {reportSectionOpenStates[section.id] ? <ChevronUp className="ml-2 h-5 w-5" /> : <ChevronDown className="ml-2 h-5 w-5" />}
+                <span className="text-2xl font-semibold text-blue-heading pl-6">{section.title}</span>
+                <ChevronDown 
+                  className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${reportSectionOpenStates[section.id] ? 'transform rotate-180' : ''}`} 
+                />
               </button>
               {reportSectionOpenStates[section.id] && section.content && (
-                <div className="bg-[#1A1F2C] p-4 rounded-md shadow-lg prose dark:prose-invert max-w-none prose-headings:text-white prose-p:text-gray-300 prose-strong:text-white prose-li:text-gray-300">
+                <div className="bg-card p-6 rounded-md shadow-lg prose dark:prose-invert max-w-none 
+                                prose-headings:text-blue-heading prose-p:text-foreground 
+                                prose-strong:text-foreground prose-li:text-foreground 
+                                prose-a:text-blue-action hover:prose-a:underline">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
                 </div>
               )}
             </div>
           ))}
 
-          {/* Render References section at the bottom if it exists */}
           {referencesSection && (
-            <div key={referencesSection.id} className="space-y-1 mt-6 pt-6 border-t border-gray-700">
+            <div key={referencesSection.id} className="space-y-2 mt-10 pt-8 border-t border-border">
               <button
-                className="flex items-center w-full text-left focus:outline-none text-xl font-semibold text-healthcare-primary mb-2 hover:underline"
+                className="flex items-center justify-between w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background p-3 rounded-md hover:bg-card/50 transition-colors duration-150"
                 onClick={() => toggleReportSection(referencesSection.id)}
                 aria-expanded={reportSectionOpenStates[referencesSection.id]}
               >
-                {referencesSection.title} {/* Display clean title */}
-                {reportSectionOpenStates[referencesSection.id] ? <ChevronUp className="ml-2 h-5 w-5" /> : <ChevronDown className="ml-2 h-5 w-5" />}
+                <span className="text-2xl font-semibold text-blue-heading pl-6">{referencesSection.title}</span>
+                <ChevronDown 
+                  className={`h-6 w-6 text-blue-action transition-transform duration-300 ease-in-out ${reportSectionOpenStates[referencesSection.id] ? 'transform rotate-180' : ''}`} 
+                />
               </button>
               {reportSectionOpenStates[referencesSection.id] && referencesSection.content && (
-                <div className="bg-[#1A1F2C] p-4 rounded-md shadow-lg prose dark:prose-invert max-w-none prose-headings:text-white prose-p:text-gray-300 prose-strong:text-white prose-li:text-gray-300">
+                <div className="bg-card p-6 rounded-md shadow-lg prose dark:prose-invert max-w-none 
+                                prose-headings:text-blue-heading prose-p:text-foreground 
+                                prose-strong:text-foreground prose-li:text-foreground 
+                                prose-a:text-blue-action hover:prose-a:underline">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{referencesSection.content}</ReactMarkdown>
                 </div>
               )}
