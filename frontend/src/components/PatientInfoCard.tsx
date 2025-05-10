@@ -1,9 +1,9 @@
+
 import { useContext } from "react";
 import { HealthcareContext } from "@/contexts/HealthcareContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { User, CalendarDays, Clipboard, Users } from "lucide-react"; // REMOVED: Icons are not used in Markdown rendering
-import ReactMarkdown from 'react-markdown'; // ADDED
-import remarkGfm from 'remark-gfm'; // ADDED
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // SAMPLE DATA for Doctor Dashboard (remains the source of truth)
 const samplePatientDataMarkdown = `
@@ -14,15 +14,14 @@ const samplePatientDataMarkdown = `
 | Gender            | Female            |
 | Insurance Number  | INS-GRDMA-19550715 |
 `;
-// END SAMPLE DATA
 
 const PatientInfoCard = () => {
   const { language } = useContext(HealthcareContext);
 
   return (
-    <Card>
+    <Card className="bg-[#1A1F2C] border-0 shadow-lg">
       <CardHeader className="bg-muted pb-2">
-        <CardTitle className="text-lg font-medium text-healthcare-dark">
+        <CardTitle className="text-[#8b5cf6] text-xl">
           {language === "en" ? "Patient Information" : "Patienteninformation"}
         </CardTitle>
       </CardHeader>

@@ -1,3 +1,4 @@
+
 import { useContext, useState } from "react";
 import Header from "@/components/Header";
 import PatientInfoCard from "@/components/PatientInfoCard";
@@ -70,12 +71,12 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-[#0f111a] text-white flex flex-col">
       <Header type="doctor" />
       
       <main className="flex-1 container max-w-7xl mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-healthcare-dark">
+          <h1 className="text-3xl font-bold text-[#8b5cf6]">
             Patient Summary
           </h1>
           
@@ -125,7 +126,7 @@ const DoctorDashboard = () => {
           {/* Documents */}
           <div className="space-y-3">
             <button
-              className="flex items-center w-full text-left focus:outline-none text-xl font-semibold text-healthcare-dark mb-4 hover:underline"
+              className="flex items-center w-full text-left focus:outline-none text-xl font-semibold text-[#8b5cf6] mb-4 hover:underline"
               onClick={() => setShowDocuments((prev) => !prev)}
               aria-expanded={showDocuments}
               aria-controls="documents-list"
