@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 from pathlib import Path
+import asyncio
 
 # Load environment variables from .env file in the project root
 # Script directory: Epoch-CDTM-Hacks/backend/routers
@@ -103,8 +104,6 @@ Text:
 {text}"""
     prompt_validate = ChatPromptTemplate.from_template(prompt_validate_text)
     chain_validate = prompt_validate | llm | StrOutputParser()
-    validation_result = await chain_validate.ainvoke(
-        {"text": extracted_text, "doc_type": document_type})
 
     # 2. Check Recency (last year)
     prompt_recency_text = """Analyze the following text to determine if the information or events described seem to be from within the last year from today.
@@ -115,8 +114,6 @@ Text:
 {text}"""
     prompt_recency = ChatPromptTemplate.from_template(prompt_recency_text)
     chain_recency = prompt_recency | llm | StrOutputParser()
-    recency_result = await chain_recency.ainvoke(
-        {"text": extracted_text, "today_date": today_date})
 
     # 3. Check Clarity and assign a score
     prompt_clarity_text = """Evaluate the clarity and coherence of the following text, which is an OCR extraction from a document.
@@ -129,7 +126,14 @@ Text:
 {text}"""
     prompt_clarity = ChatPromptTemplate.from_template(prompt_clarity_text)
     chain_clarity = prompt_clarity | llm | StrOutputParser()
-    clarity_score_str = await chain_clarity.ainvoke({"text": extracted_text})
+
+    # Run the LLM calls in parallel
+    results = await asyncio.gather(
+        chain_validate.ainvoke({"text": extracted_text, "doc_type": document_type}),
+        chain_recency.ainvoke({"text": extracted_text, "today_date": today_date}),
+        chain_clarity.ainvoke({"text": extracted_text})
+    )
+    validation_result, recency_result, clarity_score_str = results
 
     try:
         clarity_score = float(clarity_score_str)
@@ -142,13 +146,13 @@ Text:
 
 async def process_document_acceptance(extracted_text: str, validation_result: str,
                                       recency_result: str | None, clarity_score: float | None,
-                                      llm: ChatOpenAI | None):
-    """Processes the analysis, generates error messages. 
+                                      llm: ChatOpenAI | None, doc_type: str):
+    """Processes the analysis, generates error messages.
     If accepted, returns a function to extract keywords on demand.
 
     Returns:
-        dict: Contains 'accepted' (bool), 'error' (str). 
-              If accepted, also includes 'data' (dict with 'text') and 
+        dict: Contains 'accepted' (bool), 'error' (str).
+              If accepted, also includes 'data' (dict with 'text') and
               'get_keywords' (a callable function to extract keywords).
     """
     if validation_result == "Error: OPENAI_API_KEY environment variable not set." or llm is None:
@@ -156,19 +160,45 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
 
     rejection_reasons = []
 
-    if validation_result.lower() != 'yes':
-        rejection_reasons.append(
-            "its type could not be confirmed as the expected document type")
+    if doc_type in {"Insurance Card", "Doctor's Letter", "Lab Report"}:
+        # 1. Medical Relevance Check (for these specific types)
+        prompt_medical_relevance_text = """Based on the content of the following text, determine if it is medically relevant for the document type '{doc_type_context}'.
+        Medically relevant documents include patient records, test results, doctor's notes, insurance information for medical purposes, vaccination records, etc.
+        Non-medically relevant documents could be invoices for unrelated services, personal letters without medical content, random articles, etc.
+        Respond with only 'yes' or 'no'.
 
-    if recency_result and recency_result.lower() == 'not recent':
-        rejection_reasons.append(
-            "it was determined to be not recent (older than the one year ago)")
+        Text:
+        {text}
+        Document Type Context: {doc_type_context}"""
+        prompt_medical_relevance = ChatPromptTemplate.from_template(prompt_medical_relevance_text)
+        chain_medical_relevance = prompt_medical_relevance | llm | StrOutputParser()
+        medical_relevance_result = await chain_medical_relevance.ainvoke({"text": extracted_text, "doc_type_context": doc_type})
 
-    if clarity_score is None:  # Should ideally not happen if no API key error and llm is present
-        rejection_reasons.append("the clarity score could not be determined")
-    elif clarity_score < 0.5:
-        rejection_reasons.append(
-            f"its clarity score of {clarity_score:.2f} is below the 0.5 threshold")
+        if medical_relevance_result.lower() != 'yes':
+            rejection_reasons.append(f"it was determined to be not medically relevant for an '{doc_type}'")
+
+        # 2. Type Check (Content vs. Provided doc_type, for these specific types)
+        # validation_result is from analyze_document_with_langchain, checking content against the provided doc_type
+        if validation_result.lower() != 'yes':
+            rejection_reasons.append(f"its content does not seem to match the expected document type: '{doc_type}'")
+
+        # 3. Clarity Check (for these specific types)
+        if clarity_score is None: # Should ideally not happen if no API key error and llm is present
+            rejection_reasons.append("the clarity score could not be determined")
+        elif clarity_score < 0.5:
+            rejection_reasons.append(
+                f"its clarity score of {clarity_score:.2f} is below the 0.5 threshold (text may be blurry or hard to read)")
+        # Recency is explicitly not checked for these types as per requirements.
+
+    elif doc_type in {"Vaccination Card", "Anything else?"}:
+        # For these types, no specific checks within this function lead to rejection.
+        # They are considered accepted by default here, bypassing medical relevance, specific type content match, and clarity as rejection criteria.
+        # The initial validation_result (type check) from analyze_document_with_langchain is noted but not used for rejection here.
+        print("Bypassing checks for these types.")
+        pass
+    
+    # Note: The original generic recency check is now omitted unless specified for a doc_type.
+    # Current requirements do not ask for recency checks for any of the specified doc_types.
 
     if rejection_reasons:
         reasons_string = ""
@@ -176,25 +206,35 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
             reasons_string = rejection_reasons[0]
         elif len(rejection_reasons) == 2:
             reasons_string = f"{rejection_reasons[0]} and {rejection_reasons[1]}"
-        else:  # 3 or more reasons (though current logic maxes at 3 distinct types)
+        else:
             reasons_string = ", ".join(
                 rejection_reasons[:-1]) + f", and {rejection_reasons[-1]}"
 
-        error_prompt_template = """A document was rejected due to the following issues: {reasons}.
-Generate a polite, single-sentence message for the user. This message should clearly state the main problem(s) and suggest a corrective action.
-For example:
-- If the type is wrong or unconfirmed, suggest uploading the correct document type or a clearer image.
-- If the document is not recent, suggest uploading a newer one (earlier than one year ago).
-- If clarity is low, suggest re-uploading a clearer, more legible photo.
-You are speaking with non-technical users, so please explain the issues as simply as possible, in a way that non-technical users can understand. No complex words or jargon!
-For example, instead of saying the clearance score is low, say the text is blurry, and ask the user to make photo again.
-Combine these suggestions logically if there are multiple issues. Focus on guiding the user to a successful re-upload. Output only the single sentence."""
+        error_prompt_template = """A document submitted as '{doc_type_for_user}' could not be accepted due to the following: {reasons}.
+Generate a polite, single-sentence message for the user to explain this.
+This message should clearly state the main problem(s) and suggest simple corrective actions.
+Use simple language suitable for non-technical users. Avoid jargon.
+
+Examples for phrasing suggestions:
+- If not medically relevant: "The document doesn't appear to contain medical information. Please upload a relevant medical document."
+- If content doesn't match expected type: "The document's content doesn't seem to be a '{doc_type_for_user}'. Please ensure you upload the correct type of document."
+- If clarity is low: "The text in the document is blurry or hard to read. Could you please try uploading a clearer photo?"
+- If multiple issues: Combine suggestions, e.g., "The document is hard to read and its content doesn't seem to be a '{doc_type_for_user}'. Please upload a clearer photo of the correct document."
+
+Focus on guiding the user to a successful re-upload. Output only the single sentence of the user-facing message.
+
+Document Type user tried to upload: {doc_type_for_user}
+Identified issues by the system: {reasons}
+"""
         error_prompt = ChatPromptTemplate.from_template(error_prompt_template)
         error_chain = error_prompt | llm | StrOutputParser()
-        llm_generated_error = await error_chain.ainvoke({"reasons": reasons_string})
+        llm_generated_error = await error_chain.ainvoke({
+            "reasons": reasons_string,
+            "doc_type_for_user": doc_type # Pass the actual doc_type for the prompt context
+        })
         return {"accepted": False, "error": llm_generated_error.strip()}
 
-    # If all checks pass, define a function to get keywords on demand
+    # If all checks pass (i.e., no rejection_reasons were added that apply to this doc_type)
     async def _extract_keywords_on_demand():
         keyword_prompt_text = """From the following text, extract the most significant pieces of information as key-value pairs.
 For each piece of information, identify a concise, descriptive label (the key) and its corresponding value from the text.
@@ -215,10 +255,26 @@ Text:
             [f"- {kw}" for kw in individual_keywords])
         return markdown_keywords
 
-    success_message = f"Document accepted: Type correct, recency acceptable, and clarity sufficient (score: {clarity_score:.2f})."
+    success_message = ""
+    if doc_type in ["Insurance Card", "Doctor's Letter", "Lab Report"]:
+        # Construct detailed success message for types that underwent full checks
+        success_details = []
+        # We assume if it reached here without rejection_reasons, the performed checks passed.
+        success_details.append("medically relevant") 
+        success_details.append(f"type confirmed as '{doc_type}'")
+        if clarity_score is not None: 
+            success_details.append(f"clarity is sufficient (score: {clarity_score:.2f})")
+        success_message = f"Document accepted: {', '.join(success_details)}."
+    elif doc_type in ["Vaccination Card", "Anything else?"]:
+        # Simpler success message for types with fewer checks
+        success_message = f"Document accepted as '{doc_type}'. This document type bypasses detailed content checks."
+    else:
+        # Fallback, though theoretically unreachable if doc_type is always one of the validated ones
+        success_message = f"Document '{doc_type}' accepted."
+
     return {
         "accepted": True,
-        "error": success_message,
+        "error": success_message, # 'error' field also used for the success message
         "data": {
             "text": extracted_text,
         },
@@ -251,7 +307,7 @@ if __name__ == "__main__":
     acceptance_output = {}
     if llm_instance:
         acceptance_output = process_document_acceptance(
-            sample_text_report, val_res, rec_res, clar_score, llm_instance)
+            sample_text_report, val_res, rec_res, clar_score, llm_instance, sample_document_type)
         print("Acceptance Decision (Sample 1):")
 
         if acceptance_output.get("accepted"):
@@ -293,7 +349,7 @@ if __name__ == "__main__":
 
     if llm_instance_b:
         acceptance_output_b = process_document_acceptance(
-            sample_text_blurry_wrong_type, val_res_b, rec_res_b, clar_score_b, llm_instance_b)
+            sample_text_blurry_wrong_type, val_res_b, rec_res_b, clar_score_b, llm_instance_b, sample_document_type_2)
         print("Acceptance Decision (Sample 2 - blurry & wrong type):")
         # Rejected, so get_keywords won't be present
         print(json.dumps(acceptance_output_b, indent=2))
@@ -321,7 +377,7 @@ if __name__ == "__main__":
 
     if llm_instance_o:
         acceptance_output_o = process_document_acceptance(
-            sample_text_old, val_res_o, rec_res_o, clar_score_o, llm_instance_o)
+            sample_text_old, val_res_o, rec_res_o, clar_score_o, llm_instance_o, sample_document_type_3)
         print("Acceptance Decision (Sample 3 - old text):")
         # Rejected, so get_keywords won't be present
         print(json.dumps(acceptance_output_o, indent=2))
