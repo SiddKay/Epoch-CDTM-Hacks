@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,7 +117,7 @@ const DocumentList = () => {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="text-center text-muted-foreground p-4">
+      <div className="text-center text-muted-foreground p-8 text-lg">
         Loading files...
       </div>
     );
@@ -127,7 +126,7 @@ const DocumentList = () => {
   // Show empty state
   if (files.length === 0) {
     return (
-      <div className="text-center text-muted-foreground p-4">
+      <div className="text-center text-muted-foreground p-8 text-lg">
         No files uploaded yet
       </div>
     );

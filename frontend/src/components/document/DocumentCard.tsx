@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,25 +12,25 @@ interface DocumentCardProps {
 
 export const DocumentCard = ({ file, onPreview, onDelete }: DocumentCardProps) => {
   const fileTypeDisplay = getFileTypeDisplay(file.file_type);
-  const iconColorClass = getFileIconColor(file.file_type);
+  const iconColorClass = getFileIconColor(file.file_type) || 'text-blue-action';
 
   return (
-    <Card className="p-3 flex justify-between items-center card-hover">
-      <div className="flex items-center space-x-3">
-        <div className="bg-accent/10 rounded-lg p-2">
-          <FileText className={`h-5 w-5 ${iconColorClass}`} />
+    <Card className="p-4 flex justify-between items-center bg-background border border-border rounded-lg shadow-sm hover:shadow-md dark:hover:shadow-blue-action/20 transition-shadow duration-150">
+      <div className="flex items-center space-x-4">
+        <div className="bg-blue-action/10 rounded-lg p-2.5">
+          <FileText className={`h-6 w-6 ${iconColorClass}`} />
         </div>
         <div>
-          <div className="flex items-center space-x-2">
-            <h4 className="font-medium">
+          <div className="flex items-center space-x-2 mb-0.5">
+            <h4 className="font-semibold text-foreground text-base">
               {file.file_name}
             </h4>
-            <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-400">
+            <Badge variant="outline" className="border-blue-action/30 text-blue-action/80 text-xs px-1.5 py-0.5">
               {fileTypeDisplay}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {new Date(file.upload_date).toLocaleTimeString([], {
+          <p className="text-sm text-muted-foreground">
+            {new Date(file.upload_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}, {new Date(file.upload_date).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
               day: 'numeric',
@@ -40,12 +39,12 @@ export const DocumentCard = ({ file, onPreview, onDelete }: DocumentCardProps) =
           </p>
         </div>
       </div>
-      <div className="flex space-x-1">
-        <Button variant="ghost" size="icon" onClick={() => onPreview(file)}>
-          <Eye className="h-4 w-4 text-muted-foreground" />
+      <div className="flex space-x-1.5">
+        <Button variant="ghost" size="icon" onClick={() => onPreview(file)} title="Preview file">
+          <Eye className="h-5 w-5 text-blue-action/70 hover:text-blue-action transition-colors" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => onDelete(file.id)}>
-          <XCircle className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+        <Button variant="ghost" size="icon" onClick={() => onDelete(file.id)} title="Delete file">
+          <XCircle className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" />
         </Button>
       </div>
     </Card>

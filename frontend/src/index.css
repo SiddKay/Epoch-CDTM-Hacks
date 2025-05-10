@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -7,79 +6,81 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 84% 39%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217 91% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 262 83% 58%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 217 91% 70%;
+    --accent-foreground: 240 10% 3.9%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
+    --border: 240 4% 20%;
+    --input: 240 5% 15%;
+    --ring: 217 91% 70%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
-    --healthcare-primary: 221 83% 53%;
+    --healthcare-primary: 217 91% 60%;
     --healthcare-secondary: 160 84% 39%;
-    --healthcare-accent: 262 83% 58%;
-    --healthcare-danger: 0 84% 60%;
+    --healthcare-accent: 217 91% 70%;
+    --healthcare-danger: 0 72% 51%;
     --healthcare-warning: 38 92% 50%;
     --healthcare-dark: 222 47% 11%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Refined Dark Palette */
+    --background: 220 24% 7%;   /* ~#0d1117 (Darker Space Black) */
+    --foreground: 0 0% 95%;     /* #F2F2F2 (Slightly brighter white for general text) */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 212 18% 11%;       /* ~#161b22 (Layered dark tone for cards) */
+    --card-foreground: 0 0% 95%; /* #F2F2F2 */
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 212 18% 11%;      /* ~#161b22 */
+    --popover-foreground: 0 0% 95%; /* #F2F2F2 */
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217 95% 68%;    /* ~#60a5fa (Action Blue) */
+    --primary-foreground: 220 24% 7%; /* Dark text for on-action-blue elements, or white if contrast allows */
 
-    --secondary: 160 64% 39%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 217 91% 50%;  /* Keeping a darker blue for secondary actions */
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 15% 20%;      /* Darker gray for muted elements ~#2D333B */
+    --muted-foreground: 220 10% 55%; /* Lighter gray for muted text ~#7C8691 */
 
-    --accent: 262 63% 58%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 100% 76%;    /* ~#84aaff (Heading/Accent Blue) - Can be used for accents or specific heading colors directly */
+    --accent-foreground: 220 24% 7%; /* Dark text for on-accent-blue elements */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 215 14% 20%;       /* Subtle border, ~#2A3038 */
+    --input: 212 18% 11%;        /* ~#161b22, same as card for seamless inputs */
+    --ring: 217 95% 68%;         /* ~#60a5fa (Action Blue for focus rings) */
     
-    --healthcare-primary: 217.2 91.2% 59.8%;
-    --healthcare-secondary: 160 64% 39%;
-    --healthcare-accent: 262 63% 58%;
-    --healthcare-danger: 0 72% 60%;
+    /* Healthcare specific for dark theme - aligning with new palette */
+    --healthcare-primary: 217 95% 68%;   /* Action Blue ~#60a5fa */
+    --healthcare-secondary: 160 74% 39%; /* Green - kept for distinction, or could be another blue */
+    --healthcare-accent: 220 100% 76%;   /* Heading/Accent Blue ~#84aaff */
+    --healthcare-danger: 0 72% 51%;
     --healthcare-warning: 38 92% 60%;
-    --healthcare-dark: 210 40% 98%;
+    --healthcare-dark: 220 24% 7%;       /* ~#0d1117 (Darker Space Black) */
   }
 }
 
@@ -89,7 +90,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans dark:bg-[#121212];
+    @apply bg-background text-foreground font-sans;
   }
 }
 

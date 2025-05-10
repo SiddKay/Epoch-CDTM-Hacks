@@ -23,13 +23,11 @@ const MedicalHistoryDisplay = () => {
     <div className="space-y-6">
       <MarkdownTable 
         markdownContent={significantIllnessesMarkdown} 
-        title="Significant Past Illnesses"
-        // Comment: Using sample markdown data for significant illnesses
+        // title removed, handled by dropdown
       />
       <MarkdownTable 
         markdownContent={previousVisitsMarkdown} 
-        title="Previous Patient Visits"
-        // Comment: Using sample markdown data for previous visits
+        // title removed, handled by dropdown
       />
     </div>
   );
