@@ -26,32 +26,42 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
   const uploadFileToAPI = async (file: File, documentType: string): Promise<{ success: boolean, msg: string }> => {
     console.log(`Sending ${documentType} to API endpoint...`);
     
-    // TODO: Replace this with actual API endpoint integration
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
-    
-    // For testing purposes: Make "Doctor's Letter" always fail
-    if (documentType === "Doctor's Letter") {
-      console.error(`API upload failed for: ${documentType}`);
-      return { 
-        success: false, 
-        msg: `Upload failed for ${documentType}. Please try again.` 
-      };
-    }
-    
-    // For other document types: Simulate random success/failure (70% success rate)
-    const isSuccess = Math.random() < 0.7;
-    
-    if (isSuccess) {
-      console.log(`API upload successful for: ${documentType}`);
-      return { 
-        success: true, 
-        msg: `${documentType} uploaded successfully!` 
-      };
-    } else {
-      console.error(`API upload failed for: ${documentType}`);
-      return { 
-        success: false, 
-        msg: `Upload failed for ${documentType}. Please try again.` 
+    try {
+      // Create form data to send file
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doc_type', documentType);
+      
+      // Send to backend API
+      const response = await fetch('http://localhost:8000/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log(`API upload successful for: ${documentType}`);
+        return {
+          success: true,
+          msg: `${documentType} uploaded successfully!`
+        };
+      } else {
+        console.error(`API upload failed for: ${documentType}`);
+        return {
+          success: false,
+          msg: result.error || `Upload failed for ${documentType}. Please try again.`
+        };
+      }
+    } catch (error) {
+      console.error(`API upload error:`, error);
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : `Upload failed for ${documentType}. Please try again.`
       };
     }
   };
