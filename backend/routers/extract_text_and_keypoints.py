@@ -327,5 +327,3 @@ if __name__ == "__main__":
         print(json.dumps(acceptance_output_o, indent=2))
     else:
         print(f"Skipping acceptance processing due to error: {val_res_o}")
-
-# print(analyze_document_with_langchain(extracted_text)) # Old example call

@@ -3,6 +3,7 @@ import os
 from starlette.datastructures import UploadFile
 from supabase import create_client, Client
 from datetime import datetime, timezone
+from typing import Optional
 
 import dotenv
 
@@ -23,56 +24,82 @@ def get_supabase_client() -> Client:
     return create_client(supabase_url, supabase_key)
 
 
-def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints: str, doc_type: str):
+def save_to_supabase(
+    image_bytes: Optional[bytes],
+    image: Optional[UploadFile],
+    text: Optional[str],
+    keypoints: Optional[str],
+    doc_type: str,
+):
     """
     Uploads the image to Supabase Storage and saves file metadata to the grandma_files table.
+    Handles cases where image_bytes and image might be None (e.g., "Not Available" document).
     """
     supabase = get_supabase_client()
-
-    # Generate a unique file path
     image_id = str(uuid.uuid4())
-    file_path = f"{image_id}_{image.filename}"
 
-    # Upload image to Supabase storage
-    try:
-        storage_response = supabase.storage.from_("uploads").upload(
-            path=file_path,
-            file=image_bytes,
-            file_options={
-                "content-type": image.content_type,
-                "x-upsert": "true"
-            },
-        )
-    except Exception as e:
-        raise Exception(f"Failed to upload image to Supabase: {str(e)}")
+    # ---------- 1. decide if there is a real file ----------
+    # A real file exists if image_bytes is present, image object is present,
+    # and that image object has a filename attribute.
+    has_file = bool(image_bytes and image and getattr(image, "filename", None))
 
-    # Get public URL of uploaded image
-    preview_url = supabase.storage.from_("uploads").get_public_url(file_path)
+    if has_file:
+        file_path   = f"{image_id}_{image.filename}"
+        try:
+            supabase.storage.from_("uploads").upload(
+                path=file_path,
+                file=image_bytes,
+                file_options={
+                    "content-type": image.content_type,
+                    "x-upsert": "true",
+                },
+            )
+        except Exception as e:
+            raise Exception(f"Failed to upload image to Supabase: {str(e)}")
 
-    # Prepare metadata for database
+        preview_url = supabase.storage.from_("uploads").get_public_url(file_path)
+        file_name   = image.filename
+        file_type   = image.content_type
+        # Use getattr for size for compatibility with our MinimalUploadFileEmulator and real UploadFile
+        file_size   = getattr(image, "size", len(image_bytes) if image_bytes else 0)
+    else:
+        # ---------- 2. "Not available" path ----------
+        file_path   = f"path/not_available"
+        preview_url = None
+        file_name   = f"{doc_type.lower().replace(' ', '_')}_not_available.txt"  # placeholder name
+        file_type   = "text/plain"
+        file_size   = 0
+
+    # ---------- 3. insert a row either way ----------
     data = {
-        "file_name": image.filename,
-        "file_path": file_path,
-        "file_type": image.content_type,
-        "file_size": image.size,
-        "upload_date": datetime.now(timezone.utc).isoformat(),
-        "preview_url": preview_url,
-        "text": text,
-        "keypoints": keypoints,
-        "doc_type": doc_type,
+        "id":            image_id,
+        "file_name":     file_name,
+        "file_path":     file_path,
+        "file_type":     file_type,
+        "file_size":     file_size,
+        "upload_date":   datetime.now(timezone.utc).isoformat(),
+        "preview_url":   preview_url,
+        "text":          text,
+        "keypoints":     keypoints,
+        "doc_type":      doc_type,
     }
 
-    # Insert metadata into Supabase table
     insert_response = supabase.table("grandma_files").insert(data).execute()
 
-    if not insert_response.data:
+    # Check if the insert was successful, often Supabase client might not raise an error
+    # but the response will indicate failure (e.g., empty data array or specific error structure)
+    if not insert_response.data and not (hasattr(insert_response, 'error') and insert_response.error is None):
+        # Attempt to get more specific error info if available
+        error_info = getattr(insert_response, 'error', 'Unknown error')
+        print(f"Failed to insert metadata into database. Response: {insert_response}")
         raise Exception(
-            f"Failed to insert metadata into database: {insert_response}")
+            f"Failed to insert metadata into database: {error_info}"
+        )
+    
+    return {"image_id": image_id, "preview_url": preview_url}
 
-    return {"image_id": image_id, "preview_url": preview_url, **data}
 
-
-def update_file_data(image_id: str, text: str, keypoints: str):
+def update_file_data(image_id: str, text: str, keypoints: list):
     """
     Updates the file data in the database.
     """
