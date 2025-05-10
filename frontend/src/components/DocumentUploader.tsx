@@ -45,8 +45,12 @@ const DocumentUploader = () => {
         const formData = new FormData();
         formData.append('file', file);
 
+        const apiBaseUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:8000' 
+        : 'https://epoch-cdtm-hacks-186667666313.europe-west3.run.app';
+
         // Send to backend API
-        const response = await fetch('http://localhost:8000/upload-image', {
+        const response = await fetch(`${apiBaseUrl}/upload-image`, {
           method: 'POST',
           body: formData
         });

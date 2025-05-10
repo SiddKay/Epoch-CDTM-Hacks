@@ -33,7 +33,11 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
       formData.append('doc_type', documentType);
       
       // Send to backend API
-      const response = await fetch('http://localhost:8000/upload-image', {
+      const apiBaseUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:8000' 
+        : 'https://epoch-cdtm-hacks-186667666313.europe-west3.run.app';
+      
+      const response = await fetch(`${apiBaseUrl}/upload-image`, {
         method: 'POST',
         body: formData
       });
