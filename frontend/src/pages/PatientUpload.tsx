@@ -9,13 +9,16 @@ import { toast } from "@/components/ui/use-toast";
 const PatientUpload = () => {
   const handleGenerateReport = async () => {
     // Placeholder URL - update this with your actual backend endpoint
-    const reportGenerationUrl = "/api/trigger-report-generation"; 
+    const apiBaseUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : 'https://epoch-cdtm-hacks-186667666313.europe-west3.run.app';
+    const reportGenerationUrl = `${apiBaseUrl}/trigger-report-generation`; 
     
     toast({ title: "Processing...", description: "Requesting report generation." });
 
     try {
       const response = await fetch(reportGenerationUrl, {
-        method: "POST",
+        method: "GET",
         // Headers and body can be added here if needed by your backend
         // headers: { 'Content-Type': 'application/json' },
         // body: JSON.stringify({ userId: "grandma" }), // Example body

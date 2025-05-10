@@ -21,6 +21,7 @@ from langchain_openai import ChatOpenAI  # Added for LLM call
 
 class MinimalUploadFileEmulator:
     """Emulates an UploadFile with filename and content_type for placeholder use."""
+
     def __init__(self, filename: Optional[str] = None, content_type: Optional[str] = None):
         self.filename: Optional[str] = filename
         self.content_type: Optional[str] = content_type
@@ -145,7 +146,8 @@ async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = 
         try:
             # Create a minimal placeholder for the 'image' parameter
             # This is to satisfy save_to_supabase if it expects an object with 'filename' and 'content_type'
-            placeholder_image_obj = MinimalUploadFileEmulator(filename=None, content_type=None)
+            placeholder_image_obj = MinimalUploadFileEmulator(
+                filename=None, content_type=None)
 
             # Save a placeholder entry in Supabase.
             # Text and keypoints will be set by the background task.
@@ -168,10 +170,12 @@ async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = 
                 ))
                 return {"success": True, "message": f"{doc_type} marked as not available. Processing in background.", "image_id": image_id_for_na}
             else:
-                print(f"Error: Failed to get image_id from save_to_supabase for 'Not Available' {doc_type}")
+                print(
+                    f"Error: Failed to get image_id from save_to_supabase for 'Not Available' {doc_type}")
                 return {"success": False, "error": "Failed to create a record for 'Not Available' status."}
         except Exception as e:
-            print(f"Error during 'Not Available' processing for {doc_type}: {str(e)}")
+            print(
+                f"Error during 'Not Available' processing for {doc_type}: {str(e)}")
             return {"success": False, "error": f"An error occurred while marking {doc_type} as not available: {str(e)}"}
 
     # Existing code for when a file is uploaded
@@ -200,7 +204,7 @@ async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = 
 
     # Start background task
     asyncio.create_task(process_image_properly(
-        image_id, image_bytes_copy, content_type, doc_type=doc_type # Added doc_type
+        image_id, image_bytes_copy, content_type, doc_type=doc_type  # Added doc_type
     ))
 
     return {"success": accepted, "error": error}
@@ -211,11 +215,14 @@ async def process_image_properly(image_id: str, image_bytes: Optional[bytes], co
         if image_bytes is None:
             # Handle "Not Available" case for the given doc_type
             not_available_text = f"This document ({doc_type}) was marked as not available by the user."
-            not_available_keypoints = [] # No keypoints for a non-existent document
+            not_available_keypoints = []  # No keypoints for a non-existent document
 
-            print(f"Processing image_id {image_id} ({doc_type}) as 'Not Available' in background.")
-            update_file_data(image_id, not_available_text, not_available_keypoints)
-            print(f"Updated image_id {image_id} with 'Not Available' status for {doc_type}.")
+            print(
+                f"Processing image_id {image_id} ({doc_type}) as 'Not Available' in background.")
+            update_file_data(image_id, not_available_text,
+                             not_available_keypoints)
+            print(
+                f"Updated image_id {image_id} with 'Not Available' status for {doc_type}.")
             return {"success": True, "message": f"{doc_type} processed as 'Not Available'."}
 
         # Step 1: Extract text and keypoints
@@ -257,7 +264,7 @@ async def generate_combined_medical_summary_md(all_texts_concatenated: str) -> s
         # Consider returning an error or using a mock response if the API key is critical and missing.
         # For now, Langchain will raise an error if the key is missing and required by the model.
 
-    llm = ChatOpenAI(model_name="gpt-4.1-2025-04-14", openai_api_key=api_key)
+    llm = ChatOpenAI(model_name="gpt-4o", openai_api_key=api_key)
 
     prompt = f"""You are a helpful medical assistant AI.
 Analyze the following combined medical texts from multiple documents and generate a comprehensive medical summary in Markdown format.
