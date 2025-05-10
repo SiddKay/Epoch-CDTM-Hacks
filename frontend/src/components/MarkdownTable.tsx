@@ -16,7 +16,7 @@ const MarkdownTable: React.FC<MarkdownTableProps> = ({ markdownContent, title, c
           <CardTitle>{title}</CardTitle>
         </CardHeader>
       )}
-      <CardContent className="prose dark:prose-invert max-w-none">
+      <CardContent className="prose dark:prose-invert max-w-none pt-3">
         {/* Added max-w-none to allow table to use available width */}
         {/* Added dark:prose-invert for better dark mode table visibility */}
         <ReactMarkdown remarkPlugins={[remarkGfm]}>

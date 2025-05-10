@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
 export default {
 	darkMode: ["class"],
@@ -52,25 +54,31 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
-				},
-				// Healthcare specific colors
+				// New specific colors for direct use
+				'space-black': '#0A0F1A',
+				'brand-blue': '#3b82f6',
+				'brand-blue-light': '#60a5fa',
+				'brand-blue-dark': '#2563eb',
+
+				// Refined Palette
+				'space-black-darker': '#0d1117',
+				'space-black-card': '#161b22',
+				'blue-action': '#60a5fa',
+				'blue-heading': '#84aaff',
+				'logo-purple': '#8b5cf6',
+
+				'text-main': '#E0E0E0',
+				'text-muted-darktheme': '#A0A0A0',
+
+				// Healthcare specific colors - ensure they use new vars or updated values
 				healthcare: {
-					primary: '#3b82f6',    // Blue
-					secondary: '#10b981',  // Green
-					accent: '#8b5cf6',     // Purple
-					warning: '#f59e0b',    // Amber
-					danger: '#ef4444',     // Red
-					light: '#f3f4f6',      // Light gray
-					dark: '#1f2937',       // Dark gray
+					primary: 'hsl(var(--healthcare-primary))',
+					secondary: 'hsl(var(--healthcare-secondary))',
+					accent: 'hsl(var(--healthcare-accent))',
+					warning: 'hsl(var(--healthcare-warning))',
+					danger: 'hsl(var(--healthcare-danger))',
+					light: '#1E293B',
+					dark: '#0F172A',
 				}
 			},
 			borderRadius: {
@@ -115,7 +123,7 @@ export default {
 		}
 	},
 	plugins: [
-		require("tailwindcss-animate"),
-		require("@tailwindcss/typography"),
+		tailwindcssAnimate,
+		typography,
 	],
 } satisfies Config;

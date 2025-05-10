@@ -16,8 +16,7 @@ const VaccineCardTable = () => {
   return (
     <MarkdownTable 
       markdownContent={vaccineCardMarkdown} 
-      title="Vaccine Breakdown"
-      // Comment: Using sample markdown data for vaccine card
+      // title removed, handled by dropdown
     />
   );
 };

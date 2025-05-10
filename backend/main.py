@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from routers.process_image import router as process_image_router
-
+from routers.chat_speak import chat_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -14,6 +14,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Routers will be included here
 app.include_router(process_image_router)
-
-# Routers will be included here 
+app.include_router(chat_router)
