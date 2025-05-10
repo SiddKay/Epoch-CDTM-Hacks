@@ -155,7 +155,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
       toast({
         variant: 'destructive',
         title: 'File Uploads Attempted',
-        description: `Processed ${files.length} file(s) for ${currentDocumentType}. All failed. You can try again or proceed.`,
+        description: `${batchFinalReason}. You can try again or proceed.`,
       });
     }
     if (fileInputRef.current) {
