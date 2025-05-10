@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,26 +14,28 @@ const Index: React.FC = () => {
       <div className="page-header">
         <Logo />
       </div>
-      
+
       <div className="pt-6 pb-16">
         <h1 className="text-3xl font-bold mb-2">Welcome</h1>
-        <p className="text-muted-foreground mb-8">Upload and manage your medical documents</p>
-        
+        <p className="text-muted-foreground mb-8">
+          Upload and manage your medical documents
+        </p>
+
         <AppointmentNotice />
-        
+
         <div className="space-y-4">
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="w-full"
             onClick={() => navigate('/upload')}
           >
             <Upload className="mr-2 h-4 w-4" />
             Upload Documents
           </Button>
-          
-          <Button 
-            variant="secondary" 
-            size="lg" 
+
+          <Button
+            variant="secondary"
+            size="lg"
             className="w-full"
             onClick={() => navigate('/reports')}
           >
@@ -42,11 +43,8 @@ const Index: React.FC = () => {
             View My Reports
           </Button>
         </div>
-        
-        {/* Placeholder for future AI agent */}
-        <div className="fixed bottom-20 right-4 w-10 h-10 rounded-full bg-secondary/30 border border-border"></div>
       </div>
-      
+
       <NavigationFooter />
     </div>
   );

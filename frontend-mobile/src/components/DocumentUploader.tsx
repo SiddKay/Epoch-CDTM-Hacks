@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, SkipForward, CheckCircle, ArrowRight } from 'lucide-react'; // Added ArrowRight for clarity if preferred over SkipForward for "Next"
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useUploadInteraction } from '@/contexts/UploadInteractionContext';
 import ProgressBar from './ProgressBar';
 
 // Document upload sequence
@@ -10,7 +11,7 @@ const DOCUMENT_TYPES = [
   "Doctor's Letter",
   'Vaccination Card',
   'Lab Report',
-  'Anything else?', // User's original naming
+  'Anything else?',
 ];
 
 interface DocumentUploaderProps {
@@ -30,6 +31,12 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
 
   const currentDocumentType = DOCUMENT_TYPES[currentStep - 1];
   const isLastStep = currentStep === DOCUMENT_TYPES.length;
+  const { setInteractionData } = useUploadInteraction();
+  const [stepHadSuccessfulUpload, setStepHadSuccessfulUpload] = useState(false);
+
+  React.useEffect(() => {
+    setStepHadSuccessfulUpload(false); // Reset for new step
+  }, [currentStep]);
 
   // API call logic remains the same
   const uploadFileToAPI = async (
@@ -85,8 +92,9 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
     setIsUploading(true);
     setError(null); // Clear previous errors for this step on new attempt
 
-    let filesProcessedSuccessfully = 0;
-    let lastErrorMessage = '';
+    let anyFileAcceptedInBatch = false;
+    let batchFinalReason = 'No files processed.';
+    let filesProcessedInBatch = 0;
 
     for (const file of Array.from(files)) {
       setCurrentUploadingFile(file); // Set current file for UI feedback
@@ -100,55 +108,78 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
           description: response.error,
         });
         if (response.accepted) {
-          filesProcessedSuccessfully++;
-        } else {
-          lastErrorMessage = response.error; // Keep track of the last error message
+          anyFileAcceptedInBatch = true;
+          setStepHadSuccessfulUpload(true);
         }
+        batchFinalReason = response.error; // Store the message from the API
       } catch (uploadError) {
         const errorMessage =
           uploadError instanceof Error
             ? uploadError.message
             : 'An unknown error occurred';
-        lastErrorMessage = errorMessage;
+        batchFinalReason = errorMessage; // Store the error message
         toast({
           variant: 'destructive',
           title: `Upload error: ${file.name}`,
           description: errorMessage,
         });
       }
+      filesProcessedInBatch++;
     }
 
     setCurrentUploadingFile(null); // Clear after batch
     setIsUploading(false);
 
-    if (filesProcessedSuccessfully === files.length && files.length > 0) {
-      toast({
-        title: `${currentDocumentType} Files Processed`,
-        description: `${filesProcessedSuccessfully} file(s) uploaded successfully. You can upload more or proceed to the next step.`,
-      });
-    } else if (files.length > 0) {
-      setError(
-        lastErrorMessage ||
-          'Some files failed to upload. Please check notifications.'
-      );
-      toast({
-        variant: 'destructive', // Changed from default to destructive as some files failed
-        title: 'File Uploads Attempted',
-        description: `Processed ${files.length} file(s) for ${currentDocumentType}. ${filesProcessedSuccessfully} succeeded. Some may have failed. You can try again or proceed.`,
+    if (filesProcessedInBatch > 0) {
+      setInteractionData({
+        documentType: currentDocumentType,
+        skipped: false, // An upload attempt was made
+        accepted: anyFileAcceptedInBatch,
+        reason: batchFinalReason,
       });
     }
 
-    // Reset file input to allow re-selection of the same file(s)
+    // ... (rest of existing toast logic and file input reset)
+    if (anyFileAcceptedInBatch && files.length > 0) {
+      toast({
+        title: `${currentDocumentType} Files Processed`,
+        description: `${filesProcessedInBatch} file(s) processed. ${
+          anyFileAcceptedInBatch ? 'At least one successful.' : 'All failed.'
+        } You can upload more or proceed.`,
+      });
+    } else if (files.length > 0) {
+      setError(
+        batchFinalReason ||
+          'Some files failed to upload. Please check notifications.'
+      );
+      toast({
+        variant: 'destructive',
+        title: 'File Uploads Attempted',
+        description: `Processed ${files.length} file(s) for ${currentDocumentType}. All failed. You can try again or proceed.`,
+      });
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    // The component stays on the current step. User explicitly clicks "Next" or "Finish".
   };
 
   const handleNextOrFinishStep = () => {
     if (isUploading) return; // Prevent action during an active upload
 
     setError(null); // Clear any errors from the current step when moving on
+
+    if (!stepHadSuccessfulUpload) {
+      // If no successful upload occurred for this step (either no attempt or all attempts failed)
+      // and handleFileChange didn't set accepted:true, this step is considered skipped for the agent.
+      setInteractionData({
+        documentType: currentDocumentType,
+        skipped: true,
+        accepted: undefined, // Or false, to be explicit
+        reason: `User moved on from ${currentDocumentType} without a successful upload.`,
+      });
+    }
+    // If stepHadSuccessfulUpload is true, interactionData was already set by handleFileChange
+    // with skipped: false, accepted: true.
 
     if (isLastStep) {
       toast({
@@ -168,6 +199,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
           }.`,
         });
         setCurrentStep(nextStepNumber);
+        // setStepHadSuccessfulUpload(false); // This is now handled by useEffect [currentStep]
       }
     }
   };
