@@ -2,6 +2,7 @@ import os
 import httpx
 from fastapi import APIRouter, Response, status
 from fastapi import APIRouter, UploadFile, File
+from typing import Optional
 from database.supabase_client import save_to_supabase, update_file_data
 # TODO: Implement and uncomment the following import from your supabase_client.py
 from database.supabase_client import get_all_image_data_for_reprocessing, save_grandma_report, get_grandma_report_db
@@ -16,6 +17,13 @@ import time
 import asyncio
 import os  # Added for OPENAI_API_KEY
 from langchain_openai import ChatOpenAI  # Added for LLM call
+
+
+class MinimalUploadFileEmulator:
+    """Emulates an UploadFile with filename and content_type for placeholder use."""
+    def __init__(self, filename: Optional[str] = None, content_type: Optional[str] = None):
+        self.filename: Optional[str] = filename
+        self.content_type: Optional[str] = content_type
 
 
 router = APIRouter()
@@ -129,7 +137,44 @@ async def validate_image_quickly(image_bytes: bytes):
 
 
 @router.post("/upload-image")
-async def upload_image(file: UploadFile = File(...), doc_type: str = "Clinical Report"):
+async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = "Clinical Report"):
+    if file is None:
+        # Handle "Not Available" case
+        print(f"Processing '{doc_type}' as Not Available.")
+        image_id_for_na = None
+        try:
+            # Create a minimal placeholder for the 'image' parameter
+            # This is to satisfy save_to_supabase if it expects an object with 'filename' and 'content_type'
+            placeholder_image_obj = MinimalUploadFileEmulator(filename=None, content_type=None)
+
+            # Save a placeholder entry in Supabase.
+            # Text and keypoints will be set by the background task.
+            saved_data_na = save_to_supabase(
+                image_bytes=None,
+                image=placeholder_image_obj,  # Use the placeholder object
+                text=None,
+                keypoints=None,
+                doc_type=doc_type
+            )
+            image_id_for_na = saved_data_na.get("image_id")
+
+            if image_id_for_na:
+                # Start background task to set the "Not Available" text
+                asyncio.create_task(process_image_properly(
+                    image_id=image_id_for_na,
+                    image_bytes=None,
+                    content_type=None,
+                    doc_type=doc_type  # Pass doc_type
+                ))
+                return {"success": True, "message": f"{doc_type} marked as not available. Processing in background.", "image_id": image_id_for_na}
+            else:
+                print(f"Error: Failed to get image_id from save_to_supabase for 'Not Available' {doc_type}")
+                return {"success": False, "error": "Failed to create a record for 'Not Available' status."}
+        except Exception as e:
+            print(f"Error during 'Not Available' processing for {doc_type}: {str(e)}")
+            return {"success": False, "error": f"An error occurred while marking {doc_type} as not available: {str(e)}"}
+
+    # Existing code for when a file is uploaded
     print(f"Received file: {file.filename} of type {doc_type}")
     image_bytes = await file.read()
 
@@ -155,13 +200,24 @@ async def upload_image(file: UploadFile = File(...), doc_type: str = "Clinical R
 
     # Start background task
     asyncio.create_task(process_image_properly(
-        image_id, image_bytes_copy, content_type))
+        image_id, image_bytes_copy, content_type, doc_type=doc_type # Added doc_type
+    ))
 
     return {"success": accepted, "error": error}
 
 
-async def process_image_properly(image_id: str, image_bytes: bytes, content_type: str):
+async def process_image_properly(image_id: str, image_bytes: Optional[bytes], content_type: Optional[str], doc_type: str):
     try:
+        if image_bytes is None:
+            # Handle "Not Available" case for the given doc_type
+            not_available_text = f"This document ({doc_type}) was marked as not available by the user."
+            not_available_keypoints = [] # No keypoints for a non-existent document
+
+            print(f"Processing image_id {image_id} ({doc_type}) as 'Not Available' in background.")
+            update_file_data(image_id, not_available_text, not_available_keypoints)
+            print(f"Updated image_id {image_id} with 'Not Available' status for {doc_type}.")
+            return {"success": True, "message": f"{doc_type} processed as 'Not Available'."}
+
         # Step 1: Extract text and keypoints
         start_extract_time = time.time()
         result = await extract_text_and_keypoints_properly(image_bytes, content_type)
@@ -254,7 +310,7 @@ Comprehensive Medical Summary (Markdown):
         return f"## Error in Generating Summary\\n\\nAn error occurred during the LLM call: {str(e)}"
 
 
-@router.get("/generate-report")
+@router.get("/trigger-report-generation")
 async def trigger_comprehensive_report_generation():
     all_texts_concatenated = get_all_image_data_for_reprocessing()
     if not all_texts_concatenated:
