@@ -40,94 +40,105 @@ const DoctorDashboard = () => {
     const fetchAndParseReport = async () => {
       try {
         const { data, error } = await supabase
-          .from('grandma_reports') // Ensure this table name is correct
+          .from('grandma_reports' as any)
           .select('text')
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
 
+        if (error && error.code === 'PGRST116') {
+          setReportMainTitle("No documents have been uploaded by the patient yet.");
+          setReportSectionsArray([]);
+          setReferencesSection(null);
+          setReportSectionOpenStates({});
+          return;
+        }
+
         if (error) {
-          console.error("Error fetching report from Supabase:", error);
           toast({ title: "Error Loading Report", description: error.message, variant: "destructive" });
           return;
         }
 
-        if (data && (data as any).text) {
-          const rawMarkdown = (data as any).text as string;
-          let mainTitle = "Comprehensive Medical Report";
-          let contentToParse = rawMarkdown;
-
-          const firstLineEnd = rawMarkdown.indexOf('\n');
-          if (firstLineEnd !== -1) {
-            const firstLine = rawMarkdown.substring(0, firstLineEnd).trim();
-            if (firstLine.startsWith('# ')) {
-              mainTitle = firstLine.substring(2).trim();
-              contentToParse = rawMarkdown.substring(firstLineEnd + 1).trim();
-            }
-          }
-          setReportMainTitle(mainTitle);
-
-          const parts = contentToParse.split(/\n(?=## )/);
-          const parsedSections: ReportSection[] = [];
-          let tempReferencesSection: ReportSection | null = null;
-          const initialOpenStates: Record<string, boolean> = {};
-
-          parts.forEach((part, index) => {
-            const trimmedPart = part.trim();
-            if (!trimmedPart) return;
-
-            const titleEndIndex = trimmedPart.indexOf('\n');
-            let rawSectionTitle = ''; // Title as it appears in MD, e.g. ## **Title**
-            let sectionContent = '';
-
-            if (trimmedPart.startsWith('## ')) {
-              if (titleEndIndex !== -1) {
-                rawSectionTitle = trimmedPart.substring(3, titleEndIndex).trim(); 
-                sectionContent = trimmedPart.substring(titleEndIndex + 1).trim();
-              } else {
-                rawSectionTitle = trimmedPart.substring(3).trim(); 
-              }
-            } else { 
-              // Handles content before the first ## if any (should be rare after H1 stripping)
-              // Or if a section doesn't start with ## but is part of the split (unlikely with current regex)
-              if (titleEndIndex !== -1) {
-                rawSectionTitle = trimmedPart.substring(0, titleEndIndex).trim();
-                sectionContent = trimmedPart.substring(titleEndIndex + 1).trim();
-              } else {
-                rawSectionTitle = trimmedPart;
-              } 
-            }
-            
-            // Clean title for display (remove markdown bolding)
-            const displayTitle = rawSectionTitle.replace(/\*\*/g, '');
-            const sectionId = `section-${index}`;
-
-            const currentSection: ReportSection = {
-              id: sectionId,
-              title: displayTitle,
-              rawTitle: rawSectionTitle, // Keep original for potential later use if needed
-              content: sectionContent
-            };
-
-            // Identify and separate the references section (case-insensitive check)
-            if (displayTitle.toLowerCase().includes('referenzen') || displayTitle.toLowerCase().includes('references')) {
-              tempReferencesSection = currentSection;
-            } else {
-              parsedSections.push(currentSection);
-            }
-            initialOpenStates[sectionId] = false; // All sections collapsed by default
-          });
-          
-          setReportSectionsArray(parsedSections);
-          if (tempReferencesSection) {
-            setReferencesSection(tempReferencesSection);
-            initialOpenStates[tempReferencesSection.id] = false; // Ensure references also start collapsed
-          }
-          setReportSectionOpenStates(initialOpenStates);
-
-        } else if (data) {
-          // Report data received, but 'text' field is missing or null
+        if (!data || !(data as any).text) {
+          setReportMainTitle("No documents have been uploaded by the patient yet.");
+          setReportSectionsArray([]);
+          setReferencesSection(null);
+          setReportSectionOpenStates({});
+          return;
         }
+
+        const rawMarkdown = (data as any).text as string;
+        let mainTitle = "Comprehensive Medical Report";
+        let contentToParse = rawMarkdown;
+
+        const firstLineEnd = rawMarkdown.indexOf('\n');
+        if (firstLineEnd !== -1) {
+          const firstLine = rawMarkdown.substring(0, firstLineEnd).trim();
+          if (firstLine.startsWith('# ')) {
+            mainTitle = firstLine.substring(2).trim();
+            contentToParse = rawMarkdown.substring(firstLineEnd + 1).trim();
+          }
+        }
+        setReportMainTitle(mainTitle);
+
+        const parts = contentToParse.split(/\n(?=## )/);
+        const parsedSections: ReportSection[] = [];
+        let tempReferencesSection: ReportSection | null = null;
+        const initialOpenStates: Record<string, boolean> = {};
+
+        parts.forEach((part, index) => {
+          const trimmedPart = part.trim();
+          if (!trimmedPart) return;
+
+          const titleEndIndex = trimmedPart.indexOf('\n');
+          let rawSectionTitle = ''; // Title as it appears in MD, e.g. ## **Title**
+          let sectionContent = '';
+
+          if (trimmedPart.startsWith('## ')) {
+            if (titleEndIndex !== -1) {
+              rawSectionTitle = trimmedPart.substring(3, titleEndIndex).trim(); 
+              sectionContent = trimmedPart.substring(titleEndIndex + 1).trim();
+            } else {
+              rawSectionTitle = trimmedPart.substring(3).trim(); 
+            }
+          } else { 
+            // Handles content before the first ## if any (should be rare after H1 stripping)
+            // Or if a section doesn't start with ## but is part of the split (unlikely with current regex)
+            if (titleEndIndex !== -1) {
+              rawSectionTitle = trimmedPart.substring(0, titleEndIndex).trim();
+              sectionContent = trimmedPart.substring(titleEndIndex + 1).trim();
+            } else {
+              rawSectionTitle = trimmedPart;
+            } 
+          }
+          
+          // Clean title for display (remove markdown bolding)
+          const displayTitle = rawSectionTitle.replace(/\*\*/g, '');
+          const sectionId = `section-${index}`;
+
+          const currentSection: ReportSection = {
+            id: sectionId,
+            title: displayTitle,
+            rawTitle: rawSectionTitle, // Keep original for potential later use if needed
+            content: sectionContent
+          };
+
+          // Identify and separate the references section (case-insensitive check)
+          if (displayTitle.toLowerCase().includes('referenzen') || displayTitle.toLowerCase().includes('references')) {
+            tempReferencesSection = currentSection;
+          } else {
+            parsedSections.push(currentSection);
+          }
+          initialOpenStates[sectionId] = false; // All sections collapsed by default
+        });
+        
+        setReportSectionsArray(parsedSections);
+        if (tempReferencesSection) {
+          setReferencesSection(tempReferencesSection);
+          initialOpenStates[tempReferencesSection.id] = false; // Ensure references also start collapsed
+        }
+        setReportSectionOpenStates(initialOpenStates);
+
       } catch (err) {
         console.error("Unexpected error processing report:", err);
         toast({ title: "Error", description: "Could not process patient report.", variant: "destructive" });

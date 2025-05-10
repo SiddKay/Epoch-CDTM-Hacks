@@ -35,7 +35,7 @@ const PatientUpload = () => {
       
       toast({
         title: "Success!",
-        description: result.message || "Report generation process started successfully.",
+        description: result.result || result.message || "Report generation process started successfully.",
       });
 
     } catch (error) {
@@ -80,7 +80,7 @@ const PatientUpload = () => {
           <div className="flex flex-col h-full">
             <h2 className="text-3xl font-bold text-blue-heading mb-6">Uploaded Documents</h2>
             <div className="bg-card rounded-lg shadow-md flex-grow flex flex-col p-1 min-h-0">
-              <div className="overflow-y-auto max-h-[calc(100vh-28rem)] space-y-3 p-4 md:p-5 custom-scrollbar">
+              <div className="overflow-y-auto overflow-x-hidden max-h-[calc(100vh-28rem)] space-y-3 p-4 md:p-5 custom-scrollbar">
                 <DocumentList />
               </div>
             </div>

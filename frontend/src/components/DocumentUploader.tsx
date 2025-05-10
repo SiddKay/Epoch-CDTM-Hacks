@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -120,20 +119,20 @@ const DocumentUploader = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div className="w-full max-w-3xl mx-auto mt-8">
       <Card 
-        className={`border-2 border-dashed p-6 text-center ${isDragging ? 'border-primary bg-primary/5' : 'border-border'}`}
+        className={`border-2 border-dashed p-10 md:p-14 text-center ${isDragging ? 'border-primary bg-primary/5' : 'border-border'} shadow-xl rounded-2xl`}
         onDragOver={handleDragOver} 
         onDragLeave={handleDragLeave} 
         onDrop={handleDrop}
       >
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="rounded-full bg-primary/10 p-3">
-            <Upload className="h-8 w-8 text-primary" />
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <div className="rounded-full bg-primary/10 p-5">
+            <Upload className="h-12 w-12 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-medium">Upload your documents</h3>
-            <p className="text-sm text-muted-foreground mt-1">Supports: JPG, PNG only</p>
+            <h3 className="text-2xl font-bold">Upload your documents</h3>
+            <p className="text-base text-muted-foreground mt-2">Supports: JPG, PNG only</p>
           </div>
           <input 
             type="file" 

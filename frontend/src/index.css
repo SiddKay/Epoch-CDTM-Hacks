@@ -121,3 +121,20 @@
     @apply relative rounded-full h-3 w-3 bg-red-500;
   }
 }
+
+/* Custom vertical scrollbar for document list */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #84aaff transparent; /* thumb, track */
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 0px; /* yatay scroll'u gizle */
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #84aaff;
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,5 +1,4 @@
 # main.py or routes/chat.py
-from termios import ECHOPRT
 from fastapi import FastAPI, Request, APIRouter
 from pydantic import BaseModel
 import httpx
