@@ -8,13 +8,19 @@ import dotenv
 
 dotenv.load_dotenv()
 
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ["SUPABASE_KEY"]
-
 
 def get_supabase_client() -> Client:
     """Initializes and returns a Supabase client using environment variables."""
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        # This error will only be raised if a function actually tries to get a Supabase client
+        # and the environment variables are not set.
+        raise EnvironmentError(
+            "SUPABASE_URL and SUPABASE_KEY environment variables must be set "
+            "to initialize the Supabase client."
+        )
+    return create_client(supabase_url, supabase_key)
 
 
 def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints: str, doc_type: str):
@@ -77,3 +83,74 @@ def update_file_data(image_id: str, text: str, keypoints: str):
     }).eq("id", image_id).execute()
 
     return {"success": True}
+
+
+def get_all_image_data_for_reprocessing() -> str:
+    """
+    Fetches all records from the grandma_files table and downloads the associated image bytes.
+
+    Returns:
+        A string containing all the text from the documents.
+    """
+    supabase = get_supabase_client()
+    processed_documents = []
+    error_messages = []
+
+    try:
+        # Fetch all records from the 'grandma_files' table
+        response = supabase.table("grandma_files").select(
+            "doc_type", "text", "preview_url", "file_name").execute()
+
+        if not response.data:
+            print("No documents found in grandma_files table.")
+            return [], ["No documents found in grandma_files table."]
+
+        text_list = []
+        raw_texts = set()
+        for record in response.data:
+            text = record.get("text")
+            doc_type = record.get("doc_type")
+            url = record.get("preview_url")
+            file_name = record.get("file_name")
+            if not text:
+                continue
+
+            if text in raw_texts:
+                continue
+            raw_texts.add(text)
+
+            if not doc_type:
+                doc_type = "Unknown"
+
+            full_text = f"Document type: {doc_type}\nReference: [{file_name}]({url})\n---\n{text}"
+
+            text_list.append(full_text)
+
+        return '\n\n'.join(text_list)
+
+    except Exception as e:
+        print(f"Error fetching records from Supabase: {str(e)}")
+
+    # Return the list of successfully processed documents and any accumulated errors
+    return processed_documents
+
+
+def save_grandma_report(report: str):
+    """
+    Saves the comprehensive report to the grandma_reports table.
+    """
+    supabase = get_supabase_client()
+    supabase.table("grandma_reports").insert(
+        {"id": str(uuid.uuid4()), "text": report}).execute()
+
+
+def get_grandma_report_db() -> str:
+    """
+    Fetches the comprehensive report from the grandma_reports table.
+    """
+    supabase = get_supabase_client()
+    response = supabase.table("grandma_reports").select(
+        "text").order("created_at", desc=True).limit(1).execute()
+    if not response.data:
+        return None
+    return response.data[0]["text"]

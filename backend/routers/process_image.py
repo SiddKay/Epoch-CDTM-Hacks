@@ -1,5 +1,7 @@
 from fastapi import APIRouter, UploadFile, File
 from database.supabase_client import save_to_supabase, update_file_data
+# TODO: Implement and uncomment the following import from your supabase_client.py
+from database.supabase_client import get_all_image_data_for_reprocessing, save_grandma_report, get_grandma_report_db
 from .extract_text_and_keypoints import (
     extract_text_from_image,
     analyze_document_with_langchain,
@@ -9,6 +11,8 @@ from .extract_text_and_keypoints import (
 from utils.google_vision import extract_text_from_image_using_google
 import time
 import asyncio
+import os  # Added for OPENAI_API_KEY
+from langchain_openai import ChatOpenAI  # Added for LLM call
 
 
 router = APIRouter()
@@ -179,3 +183,96 @@ async def process_image_properly(image_id: str, image_bytes: bytes, content_type
     except Exception as e:
         print(f"Error in process_image_properly: {str(e)}")
         return {"success": False, "error": str(e)}
+
+
+async def generate_combined_medical_summary_md(all_texts_concatenated: str) -> str:
+    """
+    Generates a comprehensive medical summary in Markdown format from combined medical texts
+    using an LLM.
+    """
+    # print(
+    # f"Generating comprehensive medical summary from: {all_texts_concatenated}")
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("Warning: OPENAI_API_KEY environment variable not set. LLM calls may fail.")
+        # Consider returning an error or using a mock response if the API key is critical and missing.
+        # For now, Langchain will raise an error if the key is missing and required by the model.
+
+    llm = ChatOpenAI(model_name="gpt-4.1-2025-04-14", openai_api_key=api_key)
+
+    prompt = f"""You are a helpful medical assistant AI.
+Analyze the following combined medical texts from multiple documents and generate a comprehensive medical summary in Markdown format.
+
+The summary MUST include the following sections, in this order. If information for a particular section is not found in the provided texts, explicitly state "Information not found for this section." under the respective heading.
+- Anamnese (Patient's medical history and reported symptoms)
+- Befund (Clinical findings and observations)
+- Procedere (Procedures performed or planned)
+- Folgetermin (Follow-up appointments or recommendations)
+- Diagnosen (Diagnoses made)
+- Leistung (Services or treatments rendered/billed)
+
+In addition to these core sections, identify and include any other medically relevant information present in the texts. This may include, but is not limited to:
+- Lab results (e.g., blood tests, urine tests, biopsies) with values and reference ranges if available.
+- Imaging results summaries.
+- Specific measurements or vital signs.
+- Medication lists or changes.
+- Detailed observations or patient complaints not covered in Anamnese.
+
+Present all information clearly and concisely.
+Make full use of Markdown's capabilities for formatting to create a well-structured and easily readable report. This includes using:
+- Headings (e.g., ## Section Name)
+- Sub-headings (e.g., ### Subsection)
+- Bullet points or numbered lists for items.
+- Bold text for emphasis on key terms or values.
+- Tables, if appropriate, for structured data like lab results (e.g., | Test | Result | Unit | Reference |).
+
+Ensure the output is entirely in Markdown format, starting with a main heading like '# Comprehensive Medical Report'. Do not include any preamble before the Markdown content.
+
+Please also include the references to the original documents as [Document Name](url) in the summary.
+
+Combined Medical Texts:
+---
+{all_texts_concatenated}
+---
+
+Comprehensive Medical Summary (Markdown):
+"""
+    try:
+        response = await llm.ainvoke(prompt)
+        if hasattr(response, 'content'):
+            print(f"Generated summary: {response.content}")
+            return response.content
+        else:
+            # Fallback for different response structures
+            return str(response)
+    except Exception as e:
+        print(f"Error during LLM call for summary: {str(e)}")
+        return f"## Error in Generating Summary\\n\\nAn error occurred during the LLM call: {str(e)}"
+
+
+@router.get("/generate-report")
+async def trigger_comprehensive_report_generation():
+    all_texts_concatenated = get_all_image_data_for_reprocessing()
+    if not all_texts_concatenated:
+        return {"success": False, "error": "No texts to process"}
+
+    # Create a task that generates the comprehensive report
+    asyncio.create_task(
+        generate_save_report(all_texts_concatenated))
+
+    # Return immediately while processing continues in background
+    return {"success": True, "result": "Report generation started in background. The results will be available to the doctor shortly."}
+
+
+@router.get("/get-report")
+async def get_grandma_report():
+    report = get_grandma_report_db()
+    if not report:
+        return {"success": False, "error": "No report found"}
+
+    return {"success": True, "report": report}
+
+
+async def generate_save_report(all_texts_concatenated: str):
+    report = await generate_combined_medical_summary_md(all_texts_concatenated)
+    save_grandma_report(report)
