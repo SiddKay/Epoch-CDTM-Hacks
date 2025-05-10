@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 91% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 217 91% 70%;
+    --accent-foreground: 240 10% 3.9%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 4% 20%;
+    --input: 240 5% 15%;
+    --ring: 217 91% 70%;
+
+    --radius: 0.5rem;
+    
+    --healthcare-primary: 217 91% 60%;
+    --healthcare-secondary: 160 84% 39%;
+    --healthcare-accent: 217 91% 70%;
+    --healthcare-danger: 0 72% 51%;
+    --healthcare-warning: 38 92% 50%;
+    --healthcare-dark: 222 47% 11%;
+  }
+
+  .dark {
+    /* Refined Dark Palette */
+    --background: 220 24% 7%;   /* ~#0d1117 (Darker Space Black) */
+    --foreground: 0 0% 95%;     /* #F2F2F2 (Slightly brighter white for general text) */
+
+    --card: 212 18% 11%;       /* ~#161b22 (Layered dark tone for cards) */
+    --card-foreground: 0 0% 95%; /* #F2F2F2 */
+
+    --popover: 212 18% 11%;      /* ~#161b22 */
+    --popover-foreground: 0 0% 95%; /* #F2F2F2 */
+
+    --primary: 217 95% 68%;    /* ~#60a5fa (Action Blue) */
+    --primary-foreground: 220 24% 7%; /* Dark text for on-action-blue elements, or white if contrast allows */
+
+    --secondary: 217 91% 50%;  /* Keeping a darker blue for secondary actions */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 220 15% 20%;      /* Darker gray for muted elements ~#2D333B */
+    --muted-foreground: 220 10% 55%; /* Lighter gray for muted text ~#7C8691 */
+
+    --accent: 220 100% 76%;    /* ~#84aaff (Heading/Accent Blue) - Can be used for accents or specific heading colors directly */
+    --accent-foreground: 220 24% 7%; /* Dark text for on-accent-blue elements */
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 14% 20%;       /* Subtle border, ~#2A3038 */
+    --input: 212 18% 11%;        /* ~#161b22, same as card for seamless inputs */
+    --ring: 217 95% 68%;         /* ~#60a5fa (Action Blue for focus rings) */
+    
+    /* Healthcare specific for dark theme - aligning with new palette */
+    --healthcare-primary: 217 95% 68%;   /* Action Blue ~#60a5fa */
+    --healthcare-secondary: 160 74% 39%; /* Green - kept for distinction, or could be another blue */
+    --healthcare-accent: 220 100% 76%;   /* Heading/Accent Blue ~#84aaff */
+    --healthcare-danger: 0 72% 51%;
+    --healthcare-warning: 38 92% 60%;
+    --healthcare-dark: 220 24% 7%;       /* ~#0d1117 (Darker Space Black) */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  .healthcare-gradient {
+    @apply bg-gradient-to-r from-healthcare-primary to-healthcare-secondary;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1 dark:hover:shadow-primary/10;
+  }
+
+  .doctor-card {
+    @apply bg-card rounded-xl shadow-md p-6 border border-border text-card-foreground;
+  }
+  
+  .recording-indicator {
+    @apply relative flex h-3 w-3;
+  }
+  
+  .recording-indicator::before {
+    content: '';
+    @apply absolute h-full w-full rounded-full bg-red-400 opacity-75 animate-ping;
+  }
+  
+  .recording-indicator::after {
+    content: '';
+    @apply relative rounded-full h-3 w-3 bg-red-500;
+  }
+}

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+supabase
+openai
+langchain-openai
+python-dotenv
+google_cloud_vision==3.10.1
