@@ -1,11 +1,15 @@
 import uuid
-
+import os
 from starlette.datastructures import UploadFile
 from supabase import create_client, Client
 from datetime import datetime, timezone
 
-SUPABASE_URL = "https://oaiygtecjjepjuebfeai.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9haXlndGVjamplcGp1ZWJmZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4MzI2NzksImV4cCI6MjA2MjQwODY3OX0.uRXx1L6THPziMWkmusY9zkdMnzBJWrP4ay4NCHVQ_Ic"
+import dotenv
+
+dotenv.load_dotenv()
+
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
 
 def get_supabase_client() -> Client:

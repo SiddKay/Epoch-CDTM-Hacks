@@ -66,7 +66,8 @@ def extract_text_and_keypoints(image_bytes: bytes, content_type: str):
 async def upload_image(file: UploadFile = File(...), doc_type: str = "Clinical Report"):
     print(f"Received file: {file.filename} of type {doc_type}")
     image_bytes = await file.read()
-    result = extract_text_and_keypoints(image_bytes)
+    result = extract_text_and_keypoints(
+        image_bytes, content_type=file.content_type)
     if isinstance(result, tuple):
         text, keypoints = result
         save_to_supabase(image_bytes, file, text, keypoints, doc_type)
@@ -74,4 +75,4 @@ async def upload_image(file: UploadFile = File(...), doc_type: str = "Clinical R
     else:
         accepted = result.get("accepted")
         error = result.get("error")
-        return {"success": False, "error": error}
+        return {"success": accepted, "error": error}
