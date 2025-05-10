@@ -94,7 +94,6 @@ def get_all_image_data_for_reprocessing() -> str:
     """
     supabase = get_supabase_client()
     processed_documents = []
-    error_messages = []
 
     try:
         # Fetch all records from the 'grandma_files' table
@@ -107,6 +106,8 @@ def get_all_image_data_for_reprocessing() -> str:
 
         text_list = []
         raw_texts = set()
+        ref_number = 1
+        references = []
         for record in response.data:
             text = record.get("text")
             doc_type = record.get("doc_type")
@@ -122,11 +123,15 @@ def get_all_image_data_for_reprocessing() -> str:
             if not doc_type:
                 doc_type = "Unknown"
 
-            full_text = f"Document type: {doc_type}\nReference: [{file_name}]({url})\n---\n{text}"
-
+            full_text = f"Document type: {doc_type}\nReference: [({ref_number})]({url})\n---\n{text}"
             text_list.append(full_text)
-
-        return '\n\n'.join(text_list)
+            ref_number += 1
+            references.append((ref_number, file_name, url))
+        text = '\n\n'.join(text_list)
+        text += "\n\nReferences:\n"
+        for ref_number, file_name, url in references:
+            text += f" - ({ref_number}) [{file_name}]({url})\n"
+        return text.strip()
 
     except Exception as e:
         print(f"Error fetching records from Supabase: {str(e)}")
