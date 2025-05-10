@@ -314,7 +314,7 @@ Comprehensive Medical Summary (Markdown):
             return str(response)
     except Exception as e:
         print(f"Error during LLM call for summary: {str(e)}")
-        return f"## Error in Generating Summary\\n\\nAn error occurred during the LLM call: {str(e)}"
+        raise
 
 
 @router.get("/trigger-report-generation")
@@ -341,8 +341,11 @@ async def get_grandma_report():
 
 
 async def generate_save_report(all_texts_concatenated: str):
-    report = await generate_combined_medical_summary_md(all_texts_concatenated)
-    save_grandma_report(report)
+    try:
+        report = await generate_combined_medical_summary_md(all_texts_concatenated)
+        save_grandma_report(report)
+    except Exception as e:
+        print(f"Error in generate_save_report: {str(e)}")
 
 
 MODEL = "gpt-4o-mini-realtime-preview"
