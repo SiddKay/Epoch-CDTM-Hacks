@@ -1,21 +1,21 @@
-from dotenv import load_dotenv
-from openai import OpenAI
 import os
-import base64
-from google.cloud import vision
-from google.oauth2 import service_account
 import time
 
-load_dotenv()
+from dotenv import load_dotenv
+from google.cloud import vision
+from google.oauth2 import service_account
 
-# Load your service account key
-if os.getenv("PRODUCTION"):
+load_dotenv(override=True)
+
+if int(os.getenv("PRODUCTION", "0")):
+    # Load your service account key from environment variable
+    credentials = None
+    client = vision.ImageAnnotatorClient()
+else:
+    # Load your service account key locally
     credentials = service_account.Credentials.from_service_account_file(
         "google-key.json")
     client = vision.ImageAnnotatorClient(credentials=credentials)
-else:
-    credentials = None
-    client = vision.ImageAnnotatorClient()
 
 
 def extract_text_from_image_using_google(content: bytes):
