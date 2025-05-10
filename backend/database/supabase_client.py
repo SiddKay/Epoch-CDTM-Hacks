@@ -13,7 +13,7 @@ def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints: str):
+def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints: str, doc_type: str):
     """
     Uploads the image to Supabase Storage and saves file metadata to the grandma_files table.
     """
@@ -49,12 +49,14 @@ def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints
         "preview_url": preview_url,
         "text": text,
         "keypoints": keypoints,
+        "doc_type": doc_type,
     }
 
     # Insert metadata into Supabase table
     insert_response = supabase.table("grandma_files").insert(data).execute()
 
     if not insert_response.data:
-        raise Exception(f"Failed to insert metadata into database: {insert_response}")
+        raise Exception(
+            f"Failed to insert metadata into database: {insert_response}")
 
     return {"preview_url": preview_url, **data}
