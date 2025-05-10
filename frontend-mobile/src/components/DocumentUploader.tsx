@@ -42,7 +42,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
   const uploadFileToAPI = async (
     file: File,
     documentType: string
-  ): Promise<{ accepted: boolean; error: string }> => {
+  ): Promise<{ success: boolean; error: string }> => {
     console.log(`Sending ${documentType} (${file.name}) to API endpoint...`);
     try {
       const formData = new FormData();
@@ -60,14 +60,14 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      if (result.accepted) {
+      if (result.success) {
         return {
-          accepted: true,
+          success: true,
           error: `${documentType} '${file.name}' uploaded successfully!`,
         };
       } else {
         return {
-          accepted: false,
+          success: false,
           error:
             result.error ||
             `Upload failed for ${documentType} '${file.name}'. Please try again.`,
@@ -76,7 +76,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
     } catch (error) {
       console.error(`API upload error for ${file.name}:`, error);
       return {
-        accepted: false,
+        success: false,
         error:
           error instanceof Error
             ? error.message
@@ -101,13 +101,13 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
       try {
         const response = await uploadFileToAPI(file, currentDocumentType);
         toast({
-          variant: response.accepted ? 'default' : 'destructive',
-          title: response.accepted
+          variant: response.success ? 'default' : 'destructive',
+          title: response.success
             ? `Uploaded: ${file.name}`
             : `Failed: ${file.name}`,
           description: response.error,
         });
-        if (response.accepted) {
+        if (response.success) {
           anyFileAcceptedInBatch = true;
           setStepHadSuccessfulUpload(true);
         }
