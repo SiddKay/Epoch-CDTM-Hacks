@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
+import DoctorVoiceAssistant from "@/components/DoctorVoiceAssistant";
 
 interface ReportSection {
   id: string; // Unique ID for key prop, can be index or a generated ID
@@ -292,18 +293,7 @@ const DoctorDashboard = () => {
              style={{ minWidth: '100px', color: isRecording ? '#f87171' : '#60a5fa' }}>
           {statusMessage}
         </div>
-        <button
-          onClick={handleToggleRecording}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? 'Stop voice recording' : 'Start voice recording'}
-          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl border-4 transition-all duration-200
-            ${isRecording ? 'bg-red-600 border-red-700 animate-pulse-glow' : 'bg-blue-heading border-blue-heading hover:bg-blue-heading/80'}
-            focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-heading/40`}
-          style={{ boxShadow: isRecording ? '0 0 0 8px rgba(220,38,38,0.25), 0 4px 24px 0 rgba(0,0,0,0.25)' : '0 4px 24px 0 rgba(0,0,0,0.25)' }}
-        >
-          <Mic className="h-10 w-10 text-white" />
-          <span className="sr-only">{isRecording ? 'Stop voice recording' : 'Start voice recording'}</span>
-        </button>
+        <DoctorVoiceAssistant isRecording={isRecording} handleToggleRecording={handleToggleRecording} />
       </div>
       <style>{`
         @keyframes pulse-glow {
