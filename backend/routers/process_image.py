@@ -295,7 +295,10 @@ async def get_grandma_report():
 
 async def generate_save_report(all_texts_concatenated: str):
     try:
-        report = await generate_combined_medical_summary_md(all_texts_concatenated)
+        if not all_texts_concatenated.strip():
+            print("Warning: No texts to process. Skipping report generation.")
+            return
+        report = await generate_combined_medical_summary_md(all_texts_concatenated.strip())
         if not report:
             print("Warning: No report generated. Skipping save.")
             return
