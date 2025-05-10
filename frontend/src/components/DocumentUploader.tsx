@@ -20,7 +20,7 @@ const DocumentUploader = () => {
       const isValid = file.type === 'image/jpeg' || file.type === 'image/png';
       if (!isValid) {
         toast({
-          title: "Invalid file type",
+          title: "Invalid file type", 
           description: `${file.name} is not a JPG or PNG file.`,
           variant: "destructive",
         });
@@ -41,60 +41,21 @@ const DocumentUploader = () => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        // Create a unique file path
-        const fileId = uuidv4();
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${fileId}.${fileExt}`;
-        
-        console.log("Uploading file with path:", filePath);
-        
-        // Upload to Supabase Storage
-        const { data: storageData, error: storageError } = await supabase
-          .storage
-          .from('uploads')
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-          
-        if (storageError) {
-          console.error('Error uploading file to storage:', storageError);
-          toast({
-            title: "Upload Error",
-            description: `Failed to store file: ${file.name}`,
-            variant: "destructive",
-          });
-          continue;
+        // Create form data to send file
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Send to backend API
+        const response = await fetch('http://localhost:8000/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        // Get the public URL
-        const { data: publicUrlData } = supabase
-          .storage
-          .from('uploads')
-          .getPublicUrl(filePath);
-          
-        const publicUrl = publicUrlData.publicUrl;
-        
-        // Save file metadata to grandma_files table
-        const { error: dbError } = await supabase
-          .from('grandma_files')
-          .insert({
-            file_name: file.name,
-            file_type: file.type,
-            file_path: filePath,
-            file_size: file.size,
-            preview_url: publicUrl
-          });
-        
-        if (dbError) {
-          console.error('Error saving file metadata:', dbError);
-          toast({
-            title: "Metadata Error",
-            description: `Failed to save file metadata: ${file.name}`,
-            variant: "destructive",
-          });
-          continue;
-        }
+
+        const result = await response.json();
         
         // Dispatch an event to refresh the documents list
         window.dispatchEvent(new Event('refreshDocuments'));
@@ -103,6 +64,7 @@ const DocumentUploader = () => {
           title: "Document Uploaded",
           description: file.name,
         });
+
       } catch (error) {
         console.error("Error processing file:", error);
         toast({
