@@ -19,14 +19,6 @@ import os  # Added for OPENAI_API_KEY
 from langchain_openai import ChatOpenAI  # Added for LLM call
 
 
-class MinimalUploadFileEmulator:
-    """Emulates an UploadFile with filename and content_type for placeholder use."""
-
-    def __init__(self, filename: Optional[str] = None, content_type: Optional[str] = None):
-        self.filename: Optional[str] = filename
-        self.content_type: Optional[str] = content_type
-
-
 router = APIRouter()
 
 
@@ -134,57 +126,18 @@ async def validate_image_quickly(image_bytes: bytes):
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
         f"Time to process document acceptance: {acceptance_processing_time:.2f} seconds")
-    return acceptance_output
+    return acceptance_output, extracted_text
 
 
 @router.post("/upload-image")
-async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = "Clinical Report"):
-    if file is None:
-        # Handle "Not Available" case
-        print(f"Processing '{doc_type}' as Not Available.")
-        image_id_for_na = None
-        try:
-            # Create a minimal placeholder for the 'image' parameter
-            # This is to satisfy save_to_supabase if it expects an object with 'filename' and 'content_type'
-            placeholder_image_obj = MinimalUploadFileEmulator(
-                filename=None, content_type=None)
-
-            # Save a placeholder entry in Supabase.
-            # Text and keypoints will be set by the background task.
-            saved_data_na = save_to_supabase(
-                image_bytes=None,
-                image=placeholder_image_obj,  # Use the placeholder object
-                text=None,
-                keypoints=None,
-                doc_type=doc_type
-            )
-            image_id_for_na = saved_data_na.get("image_id")
-
-            if image_id_for_na:
-                # Start background task to set the "Not Available" text
-                asyncio.create_task(process_image_properly(
-                    image_id=image_id_for_na,
-                    image_bytes=None,
-                    content_type=None,
-                    doc_type=doc_type  # Pass doc_type
-                ))
-                return {"success": True, "message": f"{doc_type} marked as not available. Processing in background.", "image_id": image_id_for_na}
-            else:
-                print(
-                    f"Error: Failed to get image_id from save_to_supabase for 'Not Available' {doc_type}")
-                return {"success": False, "error": "Failed to create a record for 'Not Available' status."}
-        except Exception as e:
-            print(
-                f"Error during 'Not Available' processing for {doc_type}: {str(e)}")
-            return {"success": False, "error": f"An error occurred while marking {doc_type} as not available: {str(e)}"}
-
+async def upload_image(file: UploadFile, doc_type: str = "Clinical Report"):
     # Existing code for when a file is uploaded
     print(f"Received file: {file.filename} of type {doc_type}")
     image_bytes = await file.read()
 
     # Measure time for extract_text_and_keypoints
     start_extract_time = time.time()
-    result = await validate_image_quickly(image_bytes)
+    result, extracted_text = await validate_image_quickly(image_bytes)
     extract_time = time.time() - start_extract_time
     print(f"Time to validate image: {extract_time:.2f} seconds")
 
@@ -192,7 +145,7 @@ async def upload_image(file: Optional[UploadFile] = File(None), doc_type: str = 
     error = result.get("error")
 
     # Save to Supabase and get the image_id
-    saved_data = save_to_supabase(image_bytes, image=file, text=None,
+    saved_data = save_to_supabase(image_bytes, image=file, text=extracted_text,
                                   keypoints=None, doc_type=doc_type)
 
     # Start background task for processing the image properly

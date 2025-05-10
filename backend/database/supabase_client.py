@@ -25,8 +25,8 @@ def get_supabase_client() -> Client:
 
 
 def save_to_supabase(
-    image_bytes: Optional[bytes],
-    image: Optional[UploadFile],
+    image_bytes: bytes,
+    image: UploadFile,
     text: Optional[str],
     keypoints: Optional[str],
     doc_type: str,
@@ -38,37 +38,26 @@ def save_to_supabase(
     supabase = get_supabase_client()
     image_id = str(uuid.uuid4())
 
-    # ---------- 1. decide if there is a real file ----------
-    # A real file exists if image_bytes is present, image object is present,
-    # and that image object has a filename attribute.
-    has_file = bool(image_bytes and image and getattr(image, "filename", None))
+    file_path = f"{image_id}_{image.filename}"
+    try:
+        supabase.storage.from_("uploads").upload(
+            path=file_path,
+            file=image_bytes,
+            file_options={
+                "content-type": image.content_type,
+                "x-upsert": "true",
+            },
+        )
+    except Exception as e:
+        raise Exception(f"Failed to upload image to Supabase: {str(e)}")
 
-    if has_file:
-        file_path   = f"{image_id}_{image.filename}"
-        try:
-            supabase.storage.from_("uploads").upload(
-                path=file_path,
-                file=image_bytes,
-                file_options={
-                    "content-type": image.content_type,
-                    "x-upsert": "true",
-                },
-            )
-        except Exception as e:
-            raise Exception(f"Failed to upload image to Supabase: {str(e)}")
-
-        preview_url = supabase.storage.from_("uploads").get_public_url(file_path)
-        file_name   = image.filename
-        file_type   = image.content_type
-        # Use getattr for size for compatibility with our MinimalUploadFileEmulator and real UploadFile
-        file_size   = getattr(image, "size", len(image_bytes) if image_bytes else 0)
-    else:
-        # ---------- 2. "Not available" path ----------
-        file_path   = f"path/not_available"
-        preview_url = None
-        file_name   = f"{doc_type.lower().replace(' ', '_')}_not_available.txt"  # placeholder name
-        file_type   = "text/plain"
-        file_size   = 0
+    preview_url = supabase.storage.from_(
+        "uploads").get_public_url(file_path)
+    file_name = image.filename
+    file_type = image.content_type
+    # Use getattr for size for compatibility with our MinimalUploadFileEmulator and real UploadFile
+    file_size = getattr(image, "size", len(
+        image_bytes) if image_bytes else 0)
 
     # ---------- 3. insert a row either way ----------
     data = {
@@ -91,11 +80,12 @@ def save_to_supabase(
     if not insert_response.data and not (hasattr(insert_response, 'error') and insert_response.error is None):
         # Attempt to get more specific error info if available
         error_info = getattr(insert_response, 'error', 'Unknown error')
-        print(f"Failed to insert metadata into database. Response: {insert_response}")
+        print(
+            f"Failed to insert metadata into database. Response: {insert_response}")
         raise Exception(
             f"Failed to insert metadata into database: {error_info}"
         )
-    
+
     return {"image_id": image_id, "preview_url": preview_url}
 
 
