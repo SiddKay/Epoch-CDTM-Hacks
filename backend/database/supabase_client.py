@@ -63,4 +63,17 @@ def save_to_supabase(image_bytes: bytes, image: UploadFile, text: str, keypoints
         raise Exception(
             f"Failed to insert metadata into database: {insert_response}")
 
-    return {"preview_url": preview_url, **data}
+    return {"image_id": image_id, "preview_url": preview_url, **data}
+
+
+def update_file_data(image_id: str, text: str, keypoints: str):
+    """
+    Updates the file data in the database.
+    """
+    supabase = get_supabase_client()
+    supabase.table("grandma_files").update({
+        "text": text,
+        "keypoints": keypoints
+    }).eq("id", image_id).execute()
+
+    return {"success": True}
