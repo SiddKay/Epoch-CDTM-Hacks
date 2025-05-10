@@ -1,4 +1,3 @@
-
 import { useContext } from "react";
 import { HealthcareContext } from "@/contexts/HealthcareContext";
 import { Button } from "@/components/ui/button";
@@ -24,12 +23,10 @@ const Header = ({ type }: { type: "patient" | "doctor" }) => {
   return (
     <header className="w-full border-b border-border/40 sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full healthcare-gradient flex items-center justify-center">
-            <span className="text-white font-bold text-sm">HC</span>
-          </div>
+        <div className="flex items-center space-x-3">
+          <img src="/ovita_logo.png" alt="Ovita Logo" className="h-8 w-auto" />
           <span className="font-bold text-xl text-healthcare-primary">
-            Health Connector
+            Ovita
           </span>
         </div>
         

@@ -1,21 +1,17 @@
-
 import { useContext, useState } from "react";
 import Header from "@/components/Header";
 import PatientInfoCard from "@/components/PatientInfoCard";
-import MedicationTable from "@/components/MedicationTable";
-import VaccinationTable from "@/components/VaccinationTable";
-import ConditionsTable from "@/components/ConditionsTable";
-import VitalSignsChart from "@/components/VitalSignsChart";
 import { HealthcareContext } from "@/contexts/HealthcareContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FileText, Printer, Mic, MicOff, Download, Eye } from "lucide-react";
+import { FileText, Printer, Mic, MicOff } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import VisitsBarChart from "@/components/VisitsBarChart";
-import VaccinationPieChart from "@/components/VaccinationPieChart";
-import GlucoseTrendChart from "@/components/GlucoseTrendChart";
-import MedicalReportsSection from "@/components/MedicalReportsSection";
+import DoctorDocumentList from "@/components/DoctorDocumentList";
+
+// ADDED: New components for tab content
+import HealthReportsTable from "@/components/HealthReportsTable";
+import VaccineCardTable from "@/components/VaccineCardTable";
+import MedicalHistoryDisplay from "@/components/MedicalHistoryDisplay";
 
 const DoctorDashboard = () => {
   const { extractedData } = useContext(HealthcareContext);
@@ -120,90 +116,34 @@ const DoctorDashboard = () => {
           <PatientInfoCard />
           
           {/* Tabs for different chart types and data */}
-          <Tabs defaultValue="vitals" className="w-full">
+          <Tabs defaultValue="health-reports" className="w-full">
             <TabsList className="grid grid-cols-4">
-              <TabsTrigger value="vitals">Vital Signs</TabsTrigger>
-              <TabsTrigger value="charts">Health Charts</TabsTrigger>
-              <TabsTrigger value="medications">Medications</TabsTrigger>
-              <TabsTrigger value="reports">Medical Reports</TabsTrigger>
+              <TabsTrigger value="health-reports">Health Reports</TabsTrigger>
+              <TabsTrigger value="vaccine-card">Vaccine Card</TabsTrigger>
+              <TabsTrigger value="medical-history">Medical History</TabsTrigger>
+              <TabsTrigger value="pdf-image-view">Pdf/Image View</TabsTrigger>
             </TabsList>
             
-            {/* Vitals Tab */}
-            <TabsContent value="vitals" className="space-y-6 pt-4">
-              <VitalSignsChart />
-              <GlucoseTrendChart />
+            {/* Health Reports Tab (formerly Vitals Tab) */}
+            <TabsContent value="health-reports" className="space-y-6 pt-4">
+              <HealthReportsTable />
             </TabsContent>
             
-            {/* Charts Tab */}
-            <TabsContent value="charts" className="pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <VaccinationPieChart />
-                <VisitsBarChart />
-              </div>
+            {/* Vaccine Card Tab */}
+            <TabsContent value="vaccine-card" className="pt-4">
+              <VaccineCardTable />
             </TabsContent>
-            
-            {/* Medications Tab */}
-            <TabsContent value="medications" className="space-y-6 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MedicationTable />
-                <VaccinationTable />
-              </div>
-              <ConditionsTable />
+
+            {/* Medical History Tab */}
+            <TabsContent value="medical-history" className="space-y-6 pt-4">
+              <MedicalHistoryDisplay />
             </TabsContent>
-            
-            {/* Reports Tab */}
-            <TabsContent value="reports" className="pt-4">
-              <MedicalReportsSection />
+
+            {/* Pdf/Image View Tab */}
+            <TabsContent value="pdf-image-view" className="pt-4">
+              <DoctorDocumentList />
             </TabsContent>
           </Tabs>
-          
-          {/* Eligibility information */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Program Eligibility</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center p-3 bg-green-500/10 rounded-md">
-                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="font-medium">
-                    Hypertension Disease Management Program
-                  </span>
-                </div>
-                
-                <div className="flex items-center p-3 bg-amber-500/10 rounded-md">
-                  <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="font-medium">
-                      Diabetes Management Program
-                    </span>
-                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      Missing: Latest HbA1c measurement
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center p-3 bg-blue-500/10 rounded-md">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="font-medium">
-                    Primary Care Program
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
