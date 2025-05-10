@@ -1,3 +1,6 @@
+import os
+import httpx
+from fastapi import APIRouter, Response, status
 from fastapi import APIRouter, UploadFile, File
 from database.supabase_client import save_to_supabase, update_file_data
 # TODO: Implement and uncomment the following import from your supabase_client.py
@@ -277,3 +280,36 @@ async def get_grandma_report():
 async def generate_save_report(all_texts_concatenated: str):
     report = await generate_combined_medical_summary_md(all_texts_concatenated)
     save_grandma_report(report)
+
+
+MODEL = "gpt-4o-mini-realtime-preview"
+BASE_URL = "https://api.openai.com/v1/realtime"
+# Replace with your actual VOICE config or import it
+VOICE = "coral"
+
+
+@router.get("/realtime/session")
+async def get_realtime_session():
+    try:
+        headers = {
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": MODEL,
+            "voice": VOICE,
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{BASE_URL}/sessions", json=payload, headers=headers)
+
+        return Response(content=response.content, media_type="application/json", status_code=status.HTTP_200_OK)
+
+    except Exception as e:
+        print("Error:", str(e))
+        return Response(
+            content=f'{{"error": "{str(e)}"}}',
+            media_type="application/json",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
