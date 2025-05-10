@@ -184,16 +184,22 @@ Combine these suggestions logically if there are multiple issues. Focus on guidi
         
     # If all checks pass, define a function to get keywords on demand
     def _extract_keywords_on_demand():
-        keyword_prompt_text = """Extract the most important and relevant keywords or key phrases from the following text. 
-List them as a comma-separated string. Aim for 5-10 keywords/phrases.
+        keyword_prompt_text = """From the following text, extract the most significant pieces of information as key-value pairs.
+For each piece of information, identify a concise, descriptive label (the key) and its corresponding value from the text.
+Examples of potential labels could be 'Patient Name', 'Condition', 'Treatment', 'Finding', 'Recommendation', 'Date', 'Organization', etc., but adapt the labels dynamically based on the text content.
+List these key-value pairs as a comma-separated string. For example: 'Patient Name: Jane Doe, Condition: Cardiac Health, Recommendation: Continue treatment'.
+Aim for 5-10 distinct and informative key-value pairs.
 
 Text:
 {text}"""
         prompt_keywords = ChatPromptTemplate.from_template(keyword_prompt_text)
         chain_keywords = prompt_keywords | llm | StrOutputParser()
         keywords_str = chain_keywords.invoke({"text": extracted_text})
-        keywords_list = [keyword.strip() for keyword in keywords_str.split(',') if keyword.strip()]
-        return keywords_list
+        individual_keywords = [keyword.strip() for keyword in keywords_str.split(',') if keyword.strip()]
+        if not individual_keywords:
+            return "" # Return an empty string if no keywords are found
+        markdown_keywords = "\n".join([f"- {kw}" for kw in individual_keywords])
+        return markdown_keywords
 
     success_message = f"Document accepted: Type correct, recency acceptable, and clarity sufficient (score: {clarity_score:.2f})."
     return {
