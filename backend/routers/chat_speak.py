@@ -67,12 +67,6 @@ async def speak(request: SpeakRequest):
     return StreamingResponse(audio_data, media_type="audio/mpeg")
 
 
-# ELEVEN_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-ELEVEN_API_KEY = "sk_ec2830b1ac4f7f229a447d0394c805034a170af997151b76"
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID",
-                     "EXAVITQu4vr4xnSDxMaL")  # default voice
-
-
 @chat_router.get("/session")
 async def get_ephemeral_session():
     system_prompt = await get_system_prompt()
