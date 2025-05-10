@@ -210,6 +210,7 @@ The summary MUST include the following sections, in this order. If information f
 - Folgetermin (Follow-up appointments or recommendations)
 - Diagnosen (Diagnoses made)
 - Leistung (Services or treatments rendered/billed)
+- Referenzen (References to the original documents)
 
 In addition to these core sections, identify and include any other medically relevant information present in the texts. This may include, but is not limited to:
 - Lab results (e.g., blood tests, urine tests, biopsies) with values and reference ranges if available.
@@ -228,7 +229,7 @@ Make full use of Markdown's capabilities for formatting to create a well-structu
 
 Ensure the output is entirely in Markdown format, starting with a main heading like '# Comprehensive Medical Report'. Do not include any preamble before the Markdown content.
 
-Please also include the references to the original documents as [Document Name](url) in the summary.
+Please also include the references to the original documents as [(<number>)](url) for every section. Make sure to support every statement with a reference so that the doctor can verify the information!
 
 Combined Medical Texts:
 ---
