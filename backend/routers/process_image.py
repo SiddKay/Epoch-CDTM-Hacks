@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File
 from database.supabase_client import save_to_supabase, update_file_data
 # TODO: Implement and uncomment the following import from your supabase_client.py
-from database.supabase_client import get_all_image_data_for_reprocessing
+from database.supabase_client import get_all_image_data_for_reprocessing, save_grandma_report, get_grandma_report_db
 from .extract_text_and_keypoints import (
     extract_text_from_image,
     analyze_document_with_langchain,
@@ -11,10 +11,8 @@ from .extract_text_and_keypoints import (
 from utils.google_vision import extract_text_from_image_using_google
 import time
 import asyncio
-import os # Added for OPENAI_API_KEY
-from langchain_openai import ChatOpenAI # Added for LLM call
-import sys
-import importlib
+import os  # Added for OPENAI_API_KEY
+from langchain_openai import ChatOpenAI  # Added for LLM call
 
 
 router = APIRouter()
@@ -192,13 +190,15 @@ async def generate_combined_medical_summary_md(all_texts_concatenated: str) -> s
     Generates a comprehensive medical summary in Markdown format from combined medical texts
     using an LLM.
     """
+    # print(
+    # f"Generating comprehensive medical summary from: {all_texts_concatenated}")
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("Warning: OPENAI_API_KEY environment variable not set. LLM calls may fail.")
         # Consider returning an error or using a mock response if the API key is critical and missing.
         # For now, Langchain will raise an error if the key is missing and required by the model.
 
-    llm = ChatOpenAI( model_name="gpt-4.1-2025-04-14", openai_api_key=api_key)
+    llm = ChatOpenAI(model_name="gpt-4.1-2025-04-14", openai_api_key=api_key)
 
     prompt = f"""You are a helpful medical assistant AI.
 Analyze the following combined medical texts from multiple documents and generate a comprehensive medical summary in Markdown format.
@@ -228,6 +228,8 @@ Make full use of Markdown's capabilities for formatting to create a well-structu
 
 Ensure the output is entirely in Markdown format, starting with a main heading like '# Comprehensive Medical Report'. Do not include any preamble before the Markdown content.
 
+Please also include the references to the original documents as [Document Name](url) in the summary.
+
 Combined Medical Texts:
 ---
 {all_texts_concatenated}
@@ -238,6 +240,7 @@ Comprehensive Medical Summary (Markdown):
     try:
         response = await llm.ainvoke(prompt)
         if hasattr(response, 'content'):
+            print(f"Generated summary: {response.content}")
             return response.content
         else:
             # Fallback for different response structures
@@ -246,106 +249,30 @@ Comprehensive Medical Summary (Markdown):
         print(f"Error during LLM call for summary: {str(e)}")
         return f"## Error in Generating Summary\\n\\nAn error occurred during the LLM call: {str(e)}"
 
-# @router.get("/generate-comprehensive-report")
-# async def trigger_comprehensive_report_generation():
-#     """
-#     Fetches all documents, processes them to extract text,
-#     and then generates a combined medical summary in Markdown format.
-#     """
-#     documents_data = []
-#     try:
-#         # This is a placeholder for the actual function call.
-#         # You need to implement `get_all_image_data_for_reprocessing` in `database/supabase_client.py`
-#         # and ensure it's imported correctly at the top of this file.
-#         # from database.supabase_client import get_all_image_data_for_reprocessing
-#         if "get_all_image_data_for_reprocessing" in globals() or \
-#            any(hasattr(mod, "get_all_image_data_for_reprocessing") for mod_name, mod in sys.modules.items() if "database.supabase_client" in mod_name and mod is not None):
-#             # Dynamically get the function if it's available through an import
-#             # This is a bit complex; a direct import is preferred once the function exists.
-#             supabase_client_module = importlib.import_module("database.supabase_client")
-#             if hasattr(supabase_client_module, "get_all_image_data_for_reprocessing"):
-#                  get_all_image_data_for_reprocessing_func = getattr(supabase_client_module, "get_all_image_data_for_reprocessing")
-#                  documents_data = await get_all_image_data_for_reprocessing_func()
-#             else:
-#                 raise ImportError("Function get_all_image_data_for_reprocessing not found in database.supabase_client")
-#         else:
-#             # This message will be shown if the function isn't available.
-#             print("CRITICAL: `get_all_image_data_for_reprocessing` function not found or not imported. Please implement it in `database/supabase_client.py`.")
-#             return {
-#                 "error": "CRITICAL: `get_all_image_data_for_reprocessing` function not available. See server logs.",
-#                 "summary_md": "", "documents_processed_successfully": 0, "total_documents_attempted": 0, "processing_errors": []
-#             }
 
-#     except ImportError: # Catches if the module or function isn't found by dynamic import
-#         return {
-#             "error": "Failed to import `get_all_image_data_for_reprocessing` from `database.supabase_client`. Please ensure it is implemented and the import path is correct.",
-#             "summary_md": "", "documents_processed_successfully": 0, "total_documents_attempted": 0, "processing_errors": []
-#         }
-#     except Exception as e:
-#         return {
-#             "error": f"Failed to fetch documents from Supabase: {str(e)}. Ensure 'get_all_image_data_for_reprocessing' is implemented correctly.",
-#             "summary_md": "", "documents_processed_successfully": 0, "total_documents_attempted": 0, "processing_errors": []
-#         }
+@router.get("/generate-report")
+async def trigger_comprehensive_report_generation():
+    all_texts_concatenated = get_all_image_data_for_reprocessing()
+    if not all_texts_concatenated:
+        return {"success": False, "error": "No texts to process"}
 
-#     if not documents_data:
-#          return {
-#              "message": "No documents found in Supabase or `get_all_image_data_for_reprocessing` returned empty.",
-#              "summary_md": "", "documents_processed_successfully": 0, "total_documents_attempted": 0, "processing_errors": []
-#             }
+    # Create a task that generates the comprehensive report
+    asyncio.create_task(
+        generate_save_report(all_texts_concatenated))
 
-#     all_extracted_texts = []
-#     processing_errors = []
-#     total_documents_attempted = len(documents_data)
+    # Return immediately while processing continues in background
+    return {"success": True, "result": "Report generation started in background. The results will be available to the doctor shortly."}
 
-#     for doc_data in documents_data:
-#         image_bytes = doc_data.get("image_bytes")
-#         content_type = doc_data.get("content_type")
-#         image_id = doc_data.get("image_id", "N/A")
 
-#         if not image_bytes or not content_type:
-#             processing_errors.append(f"Missing image_bytes or content_type for document (ID: {image_id}). Skipping.")
-#             continue
-#         try:
-#             result = await extract_text_and_keypoints_properly(image_bytes, content_type)
-#             if isinstance(result, tuple):
-#                 text, _ = result
-#                 all_extracted_texts.append(text)
-#             elif isinstance(result, dict) and "error" in result:
-#                 error_message = result.get("error", "Unknown error during document processing")
-#                 processing_errors.append(f"Error processing document (ID: {image_id}): {error_message}")
-#             elif isinstance(result, str) and result.startswith("Error:"):
-#                  processing_errors.append(f"Error processing document (ID: {image_id}): {result}")
-#             else:
-#                 processing_errors.append(f"Unexpected result type from extract_text_and_keypoints_properly for document (ID: {image_id}): {type(result)}")
-#         except Exception as e:
-#             processing_errors.append(f"Exception processing document (ID: {image_id}): {str(e)}")
+@router.get("/get-report")
+async def get_grandma_report():
+    report = get_grandma_report_db()
+    if not report:
+        return {"success": False, "error": "No report found"}
 
-#     if not all_extracted_texts:
-#         return {
-#             "message": "No text could be extracted from any of the documents. Cannot generate summary.",
-#             "summary_md": "",
-#             "documents_processed_successfully": 0,
-#             "total_documents_attempted": total_documents_attempted,
-#             "processing_errors": processing_errors
-#         }
+    return {"success": True, "report": report}
 
-#     combined_text = "\\n\\n<!-- Document Separator -->\\n\\n".join(all_extracted_texts)
-#     summary_md = ""
-#     try:
-#         summary_md = await generate_combined_medical_summary_md(combined_text)
-#     except Exception as e:
-#         return {
-#             "error": f"Failed to generate medical summary via LLM: {str(e)}",
-#             "summary_md": "Error during final summary generation.",
-#             "documents_processed_successfully": len(all_extracted_texts),
-#             "total_documents_attempted": total_documents_attempted,
-#             "processing_errors": processing_errors
-#         }
 
-#     return {
-#         "message": "Comprehensive report generation process completed.",
-#         "summary_md": summary_md,
-#         "documents_processed_successfully": len(all_extracted_texts),
-#         "total_documents_attempted": total_documents_attempted,
-#         "processing_errors": processing_errors if processing_errors else None
-#     }
+async def generate_save_report(all_texts_concatenated: str):
+    report = await generate_combined_medical_summary_md(all_texts_concatenated)
+    save_grandma_report(report)

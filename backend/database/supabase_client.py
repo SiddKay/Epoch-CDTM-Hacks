@@ -8,6 +8,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
+
 def get_supabase_client() -> Client:
     """Initializes and returns a Supabase client using environment variables."""
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -84,15 +85,12 @@ def update_file_data(image_id: str, text: str, keypoints: str):
     return {"success": True}
 
 
-async def get_all_image_data_for_reprocessing():
+def get_all_image_data_for_reprocessing() -> str:
     """
     Fetches all records from the grandma_files table and downloads the associated image bytes.
 
     Returns:
-        A list of dictionaries, where each dictionary contains:
-        - 'image_id': The UUID of the image record.
-        - 'image_bytes': The raw bytes of the image file.
-        - 'content_type': The content type of the image file.
+        A string containing all the text from the documents.
     """
     supabase = get_supabase_client()
     processed_documents = []
@@ -100,63 +98,59 @@ async def get_all_image_data_for_reprocessing():
 
     try:
         # Fetch all records from the 'grandma_files' table
-        response = supabase.table("grandma_files").select("id, file_path, file_type").execute()
+        response = supabase.table("grandma_files").select(
+            "doc_type", "text", "preview_url", "file_name").execute()
 
         if not response.data:
             print("No documents found in grandma_files table.")
             return [], ["No documents found in grandma_files table."]
 
+        text_list = []
+        raw_texts = set()
         for record in response.data:
-            image_id = record.get("id")
-            file_path = record.get("file_path")
-            content_type = record.get("file_type")
-
-            if not file_path:
-                error_msg = f"Skipping record ID {image_id}: 'file_path' is missing."
-                print(error_msg)
-                error_messages.append(error_msg)
+            text = record.get("text")
+            doc_type = record.get("doc_type")
+            url = record.get("preview_url")
+            file_name = record.get("file_name")
+            if not text:
                 continue
 
-            if not content_type:
-                # Default to a generic content type if missing, though it's better if it's always present
-                print(f"Warning: 'file_type' (content_type) is missing for record ID {image_id}. Defaulting to 'application/octet-stream'.")
-                content_type = "application/octet-stream"
+            if text in raw_texts:
+                continue
+            raw_texts.add(text)
 
+            if not doc_type:
+                doc_type = "Unknown"
 
-            try:
-                # Download the image from Supabase Storage
-                # The download method returns the bytes directly
-                image_bytes_response = supabase.storage.from_("uploads").download(file_path)
+            full_text = f"Document type: {doc_type}\nReference: [{file_name}]({url})\n---\n{text}"
 
-                # The response from download() should be the bytes themselves.
-                # If it were an HTTP response object, you'd access .content, but supabase-py returns bytes directly.
-                if isinstance(image_bytes_response, bytes):
-                    processed_documents.append({
-                        "image_id": image_id,
-                        "image_bytes": image_bytes_response,
-                        "content_type": content_type
-                    })
-                else:
-                    # This case should not happen with current supabase-py behavior for successful downloads
-                    error_msg = f"Failed to download or process image for record ID {image_id} from path '{file_path}'. Unexpected response type: {type(image_bytes_response)}"
-                    print(error_msg)
-                    error_messages.append(error_msg)
+            text_list.append(full_text)
 
-            except Exception as e:
-                error_msg = f"Error downloading image for record ID {image_id} from path '{file_path}': {str(e)}"
-                print(error_msg)
-                error_messages.append(error_msg)
-                # Optionally, decide if one failed download should stop the whole process or just be skipped
+        return '\n\n'.join(text_list)
 
     except Exception as e:
-        error_msg = f"An error occurred while fetching records from Supabase: {str(e)}"
-        print(error_msg)
-        # If we can't even fetch the list of files, return empty and the main error
-        return [], [error_msg]
+        print(f"Error fetching records from Supabase: {str(e)}")
 
-    if error_messages:
-        print(f"Completed fetching with some errors: {error_messages}")
-    else:
-        print(f"Successfully fetched and processed {len(processed_documents)} documents.")
+    # Return the list of successfully processed documents and any accumulated errors
+    return processed_documents
 
-    return processed_documents # Return the list of successfully processed documents and any accumulated errors
+
+def save_grandma_report(report: str):
+    """
+    Saves the comprehensive report to the grandma_reports table.
+    """
+    supabase = get_supabase_client()
+    supabase.table("grandma_reports").insert(
+        {"id": str(uuid.uuid4()), "text": report}).execute()
+
+
+def get_grandma_report_db() -> str:
+    """
+    Fetches the comprehensive report from the grandma_reports table.
+    """
+    supabase = get_supabase_client()
+    response = supabase.table("grandma_reports").select(
+        "text").order("created_at", desc=True).limit(1).execute()
+    if not response.data:
+        return None
+    return response.data[0]["text"]
