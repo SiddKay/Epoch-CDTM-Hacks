@@ -125,7 +125,7 @@ Text:
     prompt_clarity_text = """Evaluate the clarity and coherence of the following text, which is an OCR extraction from a document.
 Assign a numerical score between 0.0 and 1.0, where 1.0 means the text is perfectly clear, well-structured, and fully understandable,
 and 0.0 means the text is completely garbled, nonsensical, or unintelligible.
-Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, randomly letters or words from other languages in the middle of text and overall meaningfulness. As this is OCR, keep in mind that if just the order of some words aren't correct but show a very clear meaning and coherence with each other, it still could me a good and clear document. 
+Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, randomly letters or words from other languages in the middle of text and overall meaningfulness.
 Respond only with the numerical score (x.xx). 
 
 Text:
