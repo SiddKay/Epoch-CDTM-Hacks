@@ -125,7 +125,7 @@ Text:
     prompt_clarity_text = """Evaluate the clarity and coherence of the following text, which is an OCR extraction from a document.
 Assign a numerical score between 0.0 and 1.0, where 1.0 means the text is perfectly clear, well-structured, and fully understandable,
 and 0.0 means the text is completely garbled, nonsensical, or unintelligible.
-Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, randomly letters or words from other languages in the middle of text and overall meaningfulness.
+Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, randomly letters or words from other languages in the middle of text and overall meaningfulness. As this is OCR, keep in mind that if just the order of some words aren't correct but show a very clear meaning and coherence with each other, it still could me a good and clear document. 
 Respond only with the numerical score (x.xx). 
 
 Text:
@@ -168,7 +168,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
 
     rejection_reasons = []
 
-    if doc_type in {"Insurance Card", "Doctor's Letter", "Lab Report"}:
+    if doc_type in {"Doctor's Letter", "Lab Report"}:
         # 1. Medical Relevance Check (for these specific types)
         prompt_medical_relevance_text = """Based on the content of the following text, determine if it is medically relevant. It shouldn't be about unrelated stuff. 
         Medically relevant documents include patient records, test results, doctor's notes, insurance information for medical purposes, vaccination records, etc.
@@ -201,7 +201,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
             rejection_reasons.append(
                 f"its clarity score of {clarity_score:.2f} is below the 0.5 threshold (text may be blurry or hard to read)")
         # Recency is explicitly not checked for these types as per requirements.
-
+        print(f"medical_relevance_result: {medical_relevance_result.lower()}, validation_result: {validation_result.lower()}, clarity_score: {clarity_score}")
     elif doc_type in {"Vaccination Card", "Anything else?"}:
         # For these types, no specific checks within this function lead to rejection.
         # They are considered accepted by default here, bypassing medical relevance, specific type content match, and clarity as rejection criteria.
