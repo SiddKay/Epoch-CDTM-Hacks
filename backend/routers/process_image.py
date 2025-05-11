@@ -1,7 +1,7 @@
 import os
 import httpx
 from fastapi import APIRouter, Response, status
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form
 from typing import Optional
 from database.supabase_client import save_to_supabase, update_file_data
 # TODO: Implement and uncomment the following import from your supabase_client.py
@@ -105,7 +105,6 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str) -> tuple[dic
         return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}, None
 
     # Step 1: Extract text from image
-    # The extract_text_from_image function from the other file returns the text or an error string.
     try:
         start_text_extraction = time.time()
         extracted_text = extract_text_from_image_using_google(image_bytes)
@@ -137,7 +136,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str) -> tuple[dic
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
         f"Time to process document acceptance: {acceptance_processing_time:.2f} seconds")
-    return acceptance_output, extracted_text
+    return (acceptance_output, extracted_text)
 
 
 @router.post("/upload-image")

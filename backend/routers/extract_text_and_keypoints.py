@@ -48,7 +48,7 @@ async def extract_text_from_image(image_bytes, content_type="image/png"):
         image_format = content_type.split('/')[1]
 
         # Create the API request
-        response = await client.chat.completions.acreate(model="gpt-4o-mini",
+        response = client.chat.completions.create(model="gpt-4o-mini",
                                                          messages=[
                                                              {
                                                                  "role": "user",
