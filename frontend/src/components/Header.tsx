@@ -51,7 +51,7 @@ const Header = ({ type }: { type: "patient" | "doctor" }) => {
             </Link>
           )}
           
-          <Avatar className="h-11 w-11 md:h-[3.3rem] md:w-[3.3rem] border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
+          <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
             <AvatarImage src={type === 'patient' ? '/grandma_avatar.png' : '/doctor.png'} alt="User Avatar" />
             <AvatarFallback className="bg-blue-action/20 text-blue-action font-semibold">
               {getInitials()}

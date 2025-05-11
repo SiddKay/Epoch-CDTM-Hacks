@@ -22,7 +22,7 @@ const CustomHeader = () => {
         </div>
         
         <div className="flex items-center">
-          <Avatar className="h-11 w-11 md:h-[3.3rem] md:w-[3.3rem] border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
+          <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
             <AvatarImage src="/doctor.png" alt="Doctor Avatar" />
             <AvatarFallback className="bg-blue-action/20 text-blue-action font-semibold">
               DR

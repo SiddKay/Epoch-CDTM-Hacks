@@ -31,14 +31,10 @@ const UploadDocuments: React.FC = () => {
 
       <div className="flex flex-col h-[calc(100vh-140px)] max-h-[calc(100vh-140px)] overflow-hidden">
         <div className="flex-1 relative min-h-0">
-          {/* Iframe with cartoon image */}
-          <iframe
-            src="/lovable-uploads/7902c203-fa49-4fe0-a9f3-3fbed5495484.png"
-            title="Friendly cartoon helper"
-            className="w-full h-full border-none bg-secondary/30 object-contain"
-            sandbox="allow-same-origin"
-            loading="lazy"
-          />
+          {/* Centered div with mic button */}
+          <div className="w-full h-full flex items-center justify-center bg-secondary/30">
+            <GlobalVoiceAgent />
+          </div>
 
           {/* Success overlay - shown when all uploads are complete */}
           {uploadCompleted && (
@@ -67,7 +63,6 @@ const UploadDocuments: React.FC = () => {
         {/* Bottom section with upload controls */}
         <div className="p-4 bg-background">
           <DocumentUploader onComplete={handleComplete} />
-          <GlobalVoiceAgent />
         </div>
       </div>
 

@@ -74,17 +74,15 @@ const GlobalVoiceAgent: React.FC = () => {
   }, [endSession]);
 
   return (
-    <div className="fixed bottom-20 right-4 z-50">
-      {' '}
-      {/* Adjust positioning as needed */}
+    <div className="flex justify-center w-full my-4">
       {status === 'connected' ? (
         <Button
           onClick={handleStopConversation}
           variant="destructive"
           size="icon"
-          className="rounded-full w-14 h-14 shadow-lg"
+          className="rounded-full w-24 h-24 shadow-lg"
         >
-          <MicOff className="h-6 w-6" />
+          <MicOff className="h-14 w-14" />
           <span className="sr-only">Stop Agent</span>
         </Button>
       ) : (
@@ -92,9 +90,9 @@ const GlobalVoiceAgent: React.FC = () => {
           onClick={handleStartConversation}
           variant="secondary" // Or your preferred style
           size="icon"
-          className="rounded-full w-14 h-14 shadow-lg bg-blue-500 hover:bg-blue-600 text-white" // Example styling
+          className="rounded-full w-24 h-24 shadow-lg bg-blue-500 hover:bg-blue-600 text-white" // Example styling
         >
-          <Mic className="h-6 w-6" />
+          <Mic className="h-14 w-14" />
           <span className="sr-only">Start Agent</span>
         </Button>
       )}
