@@ -17,12 +17,12 @@ const CustomHeader = () => {
           <div className="absolute inset-0 -m-4 blur-2xl opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-logo-purple via-logo-purple/40 to-transparent rounded-full"></div>
           
           <div className="relative z-10">
-            <img src="/ovita_logo.png" alt="Ovita Logo" className="h-16 md:h-20 w-auto transition-all duration-300 ease-in-out" />
+            <img src="/ovita_logo.png" alt="Ovita Logo" className="h-[4.4rem] md:h-[5.5rem] w-auto transition-all duration-300 ease-in-out" />
           </div>
         </div>
         
         <div className="flex items-center">
-          <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
+          <Avatar className="h-11 w-11 md:h-[3.3rem] md:w-[3.3rem] border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
             <AvatarImage src="/doctor.png" alt="Doctor Avatar" />
             <AvatarFallback className="bg-blue-action/20 text-blue-action font-semibold">
               DR
@@ -173,7 +173,7 @@ const PatientUpload = () => {
       <main className="flex-1 container max-w-7xl mx-auto py-10 px-4 md:px-6">
         <div className="text-center mb-10">
           <h1 className="text-4xl lg:text-5xl font-bold text-blue-heading mb-3 sm:mb-4">
-            Welcome Doc
+            Welcome Doc!
           </h1>
           <p className="text-lg text-muted-foreground">
             Review your patient's documents and generate a report for a more comprehensive overview
@@ -193,7 +193,7 @@ const PatientUpload = () => {
               <Button 
                 onClick={handleGenerateReport} 
                 disabled={isGenerating}
-                className="whitespace-nowrap bg-blue-heading text-white rounded-lg shadow-md hover:bg-blue-heading/90 transition-colors duration-200 px-8 py-3 text-base font-medium"
+                className="whitespace-nowrap bg-[#1a2c59] text-white rounded-lg shadow-md hover:bg-[#162147] transition-colors duration-200 px-8 py-3 text-base font-medium"
               >
                 {isGenerating ? (
                   <>

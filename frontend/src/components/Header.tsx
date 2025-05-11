@@ -45,13 +45,13 @@ const Header = ({ type }: { type: "patient" | "doctor" }) => {
             </Link>
           ) : (
             <Link to="/">
-              <Button className="bg-blue-heading border-blue-heading text-white rounded-lg shadow-md hover:bg-blue-heading/80 transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
+              <Button className="bg-[#1a2c59] border-[#1a2c59] text-white rounded-lg shadow-md hover:bg-[#162147] transition-all duration-200 px-5 py-2.5 text-sm md:text-base font-medium">
                 {t.backToPatient}
               </Button>
             </Link>
           )}
           
-          <Avatar className="h-10 w-10 md:h-12 md:h-12 border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
+          <Avatar className="h-11 w-11 md:h-[3.3rem] md:w-[3.3rem] border-2 border-border hover:border-blue-action/50 transition-colors duration-200">
             <AvatarImage src={type === 'patient' ? '/grandma_avatar.png' : '/doctor.png'} alt="User Avatar" />
             <AvatarFallback className="bg-blue-action/20 text-blue-action font-semibold">
               {getInitials()}
