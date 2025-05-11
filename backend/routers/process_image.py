@@ -56,7 +56,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type  # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
@@ -119,19 +119,19 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
     start_document_analysis = time.time()
     val_res, rec_res, clar_score, llm_instance = await analyze_document_with_langchain(
         extracted_text,
-        document_type=doc_type # Use the passed doc_type
+        document_type=doc_type  # Use the passed doc_type
     )
     document_analysis_time = time.time() - start_document_analysis
     print(f"Time to analyze document: {document_analysis_time:.2f} seconds")
 
     if llm_instance is None:  # Indicates API key error from analyze_document_with_langchain
-        return extracted_text, [f"Document analysis failed: {val_res}"]
+        return {"accepted": False, "error": "Document analysis failed: API key error"}, extracted_text
 
     # Step 3: Process acceptance and conditionally get keywords
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type  # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(

@@ -129,8 +129,10 @@ Text:
 
     # Run the LLM calls in parallel
     results = await asyncio.gather(
-        chain_validate.ainvoke({"text": extracted_text, "doc_type": document_type}),
-        chain_recency.ainvoke({"text": extracted_text, "today_date": today_date}),
+        chain_validate.ainvoke(
+            {"text": extracted_text, "doc_type": document_type}),
+        chain_recency.ainvoke(
+            {"text": extracted_text, "today_date": today_date}),
         chain_clarity.ainvoke({"text": extracted_text})
     )
     validation_result, recency_result, clarity_score_str = results
@@ -170,21 +172,25 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
         Text:
         {text}
         Document Type Context: {doc_type_context}"""
-        prompt_medical_relevance = ChatPromptTemplate.from_template(prompt_medical_relevance_text)
+        prompt_medical_relevance = ChatPromptTemplate.from_template(
+            prompt_medical_relevance_text)
         chain_medical_relevance = prompt_medical_relevance | llm | StrOutputParser()
         medical_relevance_result = await chain_medical_relevance.ainvoke({"text": extracted_text, "doc_type_context": doc_type})
 
         if medical_relevance_result.lower() != 'yes':
-            rejection_reasons.append(f"it was determined to be not medically relevant for an '{doc_type}'")
+            rejection_reasons.append(
+                f"it was determined to be not medically relevant for an '{doc_type}'")
 
         # 2. Type Check (Content vs. Provided doc_type, for these specific types)
         # validation_result is from analyze_document_with_langchain, checking content against the provided doc_type
         if validation_result.lower() != 'yes':
-            rejection_reasons.append(f"its content does not seem to match the expected document type: '{doc_type}'")
+            rejection_reasons.append(
+                f"its content does not seem to match the expected document type: '{doc_type}'")
 
         # 3. Clarity Check (for these specific types)
-        if clarity_score is None: # Should ideally not happen if no API key error and llm is present
-            rejection_reasons.append("the clarity score could not be determined")
+        if clarity_score is None:  # Should ideally not happen if no API key error and llm is present
+            rejection_reasons.append(
+                "the clarity score could not be determined")
         elif clarity_score < 0.5:
             rejection_reasons.append(
                 f"its clarity score of {clarity_score:.2f} is below the 0.5 threshold (text may be blurry or hard to read)")
@@ -196,7 +202,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
         # The initial validation_result (type check) from analyze_document_with_langchain is noted but not used for rejection here.
         print("Bypassing checks for these types.")
         pass
-    
+
     # Note: The original generic recency check is now omitted unless specified for a doc_type.
     # Current requirements do not ask for recency checks for any of the specified doc_types.
 
@@ -230,7 +236,7 @@ Identified issues by the system: {reasons}
         error_chain = error_prompt | llm | StrOutputParser()
         llm_generated_error = await error_chain.ainvoke({
             "reasons": reasons_string,
-            "doc_type_for_user": doc_type # Pass the actual doc_type for the prompt context
+            "doc_type_for_user": doc_type  # Pass the actual doc_type for the prompt context
         })
         return {"accepted": False, "error": llm_generated_error.strip()}
 
@@ -260,10 +266,11 @@ Text:
         # Construct detailed success message for types that underwent full checks
         success_details = []
         # We assume if it reached here without rejection_reasons, the performed checks passed.
-        success_details.append("medically relevant") 
+        success_details.append("medically relevant")
         success_details.append(f"type confirmed as '{doc_type}'")
-        if clarity_score is not None: 
-            success_details.append(f"clarity is sufficient (score: {clarity_score:.2f})")
+        if clarity_score is not None:
+            success_details.append(
+                f"clarity is sufficient (score: {clarity_score:.2f})")
         success_message = f"Document accepted: {', '.join(success_details)}."
     elif doc_type in ["Vaccination Card", "Anything else?"]:
         # Simpler success message for types with fewer checks
@@ -274,7 +281,7 @@ Text:
 
     return {
         "accepted": True,
-        "error": success_message, # 'error' field also used for the success message
+        "error": success_message,  # 'error' field also used for the success message
         "data": {
             "text": extracted_text,
         },
