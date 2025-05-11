@@ -11,6 +11,7 @@ from .extract_text_and_keypoints import (
     analyze_document_with_langchain,
     process_document_acceptance
 )
+from fastapi import Form
 
 from utils.google_vision import extract_text_from_image_using_google
 import time
@@ -140,7 +141,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str) -> tuple[dic
 
 
 @router.post("/upload-image")
-async def upload_image(file: UploadFile, doc_type: str = "Clinical Report"):
+async def upload_image(file: UploadFile, doc_type: str = Form(...)):
     # Existing code for when a file is uploaded
     print(f"Received file: {file.filename} of type {doc_type}")
     image_bytes = await file.read()
