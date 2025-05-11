@@ -144,7 +144,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
       toast({
         title: `${currentDocumentType} Files Processed`,
         description: `${filesProcessedInBatch} file(s) processed. ${
-          anyFileAcceptedInBatch ? 'At least one successful.' : 'All failed.'
+          anyFileAcceptedInBatch ? 'At least one successful.' : `All failed. ${batchFinalReason}`
         } You can upload more or proceed.`,
       });
     } else if (files.length > 0) {
@@ -155,7 +155,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({ onComplete }) => {
       toast({
         variant: 'destructive',
         title: 'File Uploads Attempted',
-        description: `${batchFinalReason}. You can try again or proceed.`,
+        description: `Processed ${files.length} file(s) for ${currentDocumentType}. All failed. ${batchFinalReason} You can try again or proceed.`,
       });
     }
     if (fileInputRef.current) {

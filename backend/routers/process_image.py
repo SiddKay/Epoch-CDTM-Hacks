@@ -11,6 +11,7 @@ from .extract_text_and_keypoints import (
     analyze_document_with_langchain,
     process_document_acceptance
 )
+from fastapi import Form
 
 from utils.google_vision import extract_text_from_image_using_google
 import time
@@ -56,7 +57,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type  # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
@@ -90,7 +91,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
         return acceptance_output
 
 
-async def validate_image_quickly(image_bytes: bytes, doc_type: str):
+async def validate_image_quickly(image_bytes: bytes, doc_type: str) -> tuple[dict, str | None]:
     """Extract text and validate it using Google Vision."""
 
     allowed_doc_types = [
@@ -101,7 +102,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
         'Anything else?'
     ]
     if doc_type not in allowed_doc_types:
-        return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}
+        return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}, None
 
     # Step 1: Extract text from image
     # The extract_text_from_image function from the other file returns the text or an error string.
@@ -111,7 +112,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
         text_extraction_time = time.time() - start_text_extraction
         print(f"Time to extract text: {text_extraction_time:.2f} seconds")
     except Exception as e:
-        return {"accepted": False, "error": f"Text extraction failed: {str(e)}"}
+        return {"accepted": False, "error": f"Text extraction failed: {str(e)}"}, None
 
     # Step 2: Analyze the document (type, recency, clarity)
     # This returns: validation_result, recency_result, clarity_score, llm_instance
@@ -119,19 +120,19 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
     start_document_analysis = time.time()
     val_res, rec_res, clar_score, llm_instance = await analyze_document_with_langchain(
         extracted_text,
-        document_type=doc_type # Use the passed doc_type
+        document_type=doc_type  # Use the passed doc_type
     )
     document_analysis_time = time.time() - start_document_analysis
     print(f"Time to analyze document: {document_analysis_time:.2f} seconds")
 
     if llm_instance is None:  # Indicates API key error from analyze_document_with_langchain
-        return extracted_text, [f"Document analysis failed: {val_res}"]
+        return {"accepted": False, "error": "Document analysis failed: API key error"}, extracted_text
 
     # Step 3: Process acceptance and conditionally get keywords
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type  # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
@@ -140,7 +141,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
 
 
 @router.post("/upload-image")
-async def upload_image(file: UploadFile, doc_type: str = "Clinical Report"):
+async def upload_image(file: UploadFile, doc_type: str = Form(...)):
     # Existing code for when a file is uploaded
     print(f"Received file: {file.filename} of type {doc_type}")
     image_bytes = await file.read()
