@@ -90,7 +90,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
         return acceptance_output
 
 
-async def validate_image_quickly(image_bytes: bytes, doc_type: str):
+async def validate_image_quickly(image_bytes: bytes, doc_type: str) -> tuple[dict, str | None]:
     """Extract text and validate it using Google Vision."""
 
     allowed_doc_types = [
@@ -101,7 +101,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
         'Anything else?'
     ]
     if doc_type not in allowed_doc_types:
-        return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}
+        return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}, None
 
     # Step 1: Extract text from image
     # The extract_text_from_image function from the other file returns the text or an error string.
@@ -111,7 +111,7 @@ async def validate_image_quickly(image_bytes: bytes, doc_type: str):
         text_extraction_time = time.time() - start_text_extraction
         print(f"Time to extract text: {text_extraction_time:.2f} seconds")
     except Exception as e:
-        return {"accepted": False, "error": f"Text extraction failed: {str(e)}"}
+        return {"accepted": False, "error": f"Text extraction failed: {str(e)}"}, None
 
     # Step 2: Analyze the document (type, recency, clarity)
     # This returns: validation_result, recency_result, clarity_score, llm_instance
