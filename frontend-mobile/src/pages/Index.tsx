@@ -11,7 +11,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="app-container px-4">
-      <div className="page-header">
+      <div className="page-header justify-center">
         <Logo />
       </div>
 
@@ -26,7 +26,7 @@ const Index: React.FC = () => {
         <div className="space-y-4">
           <Button
             size="lg"
-            className="w-full"
+            className="w-full bg-blue-action hover:bg-blue-action/90 text-foreground"
             onClick={() => navigate('/upload')}
           >
             <Upload className="mr-2 h-4 w-4" />
@@ -36,7 +36,7 @@ const Index: React.FC = () => {
           <Button
             variant="secondary"
             size="lg"
-            className="w-full"
+            className="w-full bg-blue-dark hover:bg-blue-dark/80 text-foreground"
             onClick={() => navigate('/reports')}
           >
             <FileText className="mr-2 h-4 w-4" />

@@ -29,4 +29,5 @@ def extract_text_from_image_using_google(content: bytes):
     end = time.time()
     result_google = end - start
     print(f"Text extraction via Google Vision: {result_google} seconds")
+    print(f"Extracted text: {text}")
     return text

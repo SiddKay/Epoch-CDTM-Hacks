@@ -98,7 +98,13 @@ async def analyze_document_with_langchain(extracted_text: str, document_type: st
 
     # 1. Validate Document Type
     prompt_validate_text = """Based on the content of the following text, determine if it is a '{doc_type}'.
-Respond with only 'yes' or 'no'.
+    As information: 
+    Insurance Card: has information (name) about the patient, the insurance provider (Versicherungsamt/Gesundheitskasse), and the insurance number (Versicherungsnummer).
+    Doctor's Letter: has information about the patient's problems and/or their symptoms, possible diagnoses, and treatment.
+    Lab Report: has information about test results usually with numbers, graphs and metrics, such as blood test.
+    Vaccination Card: has information about the patient, their previous vaccinations and dates of them.  
+
+    Respond with only 'yes' or 'no'.
 
 Text:
 {text}"""
@@ -119,7 +125,7 @@ Text:
     prompt_clarity_text = """Evaluate the clarity and coherence of the following text, which is an OCR extraction from a document.
 Assign a numerical score between 0.0 and 1.0, where 1.0 means the text is perfectly clear, well-structured, and fully understandable,
 and 0.0 means the text is completely garbled, nonsensical, or unintelligible.
-Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, and overall meaningfulness.
+Consider factors like grammatical correctness, if there are words obviously out of context, completeness of sentences, randomly letters or words from other languages in the middle of text and overall meaningfulness.
 Respond only with the numerical score (x.xx). 
 
 Text:
@@ -164,7 +170,7 @@ async def process_document_acceptance(extracted_text: str, validation_result: st
 
     if doc_type in {"Insurance Card", "Doctor's Letter", "Lab Report"}:
         # 1. Medical Relevance Check (for these specific types)
-        prompt_medical_relevance_text = """Based on the content of the following text, determine if it is medically relevant for the document type '{doc_type_context}'.
+        prompt_medical_relevance_text = """Based on the content of the following text, determine if it is medically relevant. It shouldn't be about unrelated stuff. 
         Medically relevant documents include patient records, test results, doctor's notes, insurance information for medical purposes, vaccination records, etc.
         Non-medically relevant documents could be invoices for unrelated services, personal letters without medical content, random articles, etc.
         Respond with only 'yes' or 'no'.

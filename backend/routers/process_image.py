@@ -154,21 +154,22 @@ async def upload_image(file: UploadFile, doc_type: str = Form(...)):
     accepted = result.get("accepted")
     error = result.get("error")
 
-    # Save to Supabase and get the image_id
-    saved_data = save_to_supabase(image_bytes, image=file, text=extracted_text,
-                                  keypoints=None, doc_type=doc_type)
+    if accepted:
+        # Save to Supabase and get the image_id
+        saved_data = save_to_supabase(image_bytes, image=file, text=extracted_text,
+                                      keypoints=None, doc_type=doc_type)
 
-    # Start background task for processing the image properly
-    image_id = saved_data.get("image_id")
-    content_type = file.content_type
+        # Start background task for processing the image properly
+        image_id = saved_data.get("image_id")
+        content_type = file.content_type
 
-    # Create a copy of image_bytes for the background task
-    image_bytes_copy = image_bytes
+        # Create a copy of image_bytes for the background task
+        image_bytes_copy = image_bytes
 
-    # Start background task
-    asyncio.create_task(process_image_properly(
-        image_id, image_bytes_copy, content_type, doc_type=doc_type  # Added doc_type
-    ))
+        # Start background task
+        asyncio.create_task(process_image_properly(
+            image_id, image_bytes_copy, content_type, doc_type=doc_type  # Added doc_type
+        ))
 
     return {"success": accepted, "error": error}
 

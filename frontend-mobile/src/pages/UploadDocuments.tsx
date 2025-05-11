@@ -24,7 +24,9 @@ const UploadDocuments: React.FC = () => {
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Back</span>
         </Button>
-        <Logo />
+        <div className="ml-4">
+          <Logo />
+        </div>
       </div>
 
       <div className="flex flex-col h-[calc(100vh-140px)] max-h-[calc(100vh-140px)] overflow-hidden">
