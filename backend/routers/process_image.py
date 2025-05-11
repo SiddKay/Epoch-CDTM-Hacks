@@ -22,7 +22,7 @@ from langchain_openai import ChatOpenAI  # Added for LLM call
 router = APIRouter()
 
 
-async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: str):
+async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: str, doc_type: str):
     """Processes an image: extracts text, analyzes it, and extracts keywords if accepted."""
 
     # Step 1: Extract text from image
@@ -44,7 +44,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
     start_document_analysis = time.time()
     val_res, rec_res, clar_score, llm_instance = await analyze_document_with_langchain(
         extracted_text,
-        document_type="report"  # Defaulting to "report", can be parameterized later
+        document_type=doc_type  # Use the passed doc_type
     )
     document_analysis_time = time.time() - start_document_analysis
     print(f"Time to analyze document: {document_analysis_time:.2f} seconds")
@@ -56,7 +56,7 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
@@ -90,8 +90,18 @@ async def extract_text_and_keypoints_properly(image_bytes: bytes, content_type: 
         return acceptance_output
 
 
-async def validate_image_quickly(image_bytes: bytes):
+async def validate_image_quickly(image_bytes: bytes, doc_type: str):
     """Extract text and validate it using Google Vision."""
+
+    allowed_doc_types = [
+        'Insurance Card',
+        "Doctor's Letter",
+        'Vaccination Card',
+        'Lab Report',
+        'Anything else?'
+    ]
+    if doc_type not in allowed_doc_types:
+        return {"accepted": False, "error": f"Invalid document type: {doc_type}. Allowed types are: {', '.join(allowed_doc_types)}"}
 
     # Step 1: Extract text from image
     # The extract_text_from_image function from the other file returns the text or an error string.
@@ -109,7 +119,7 @@ async def validate_image_quickly(image_bytes: bytes):
     start_document_analysis = time.time()
     val_res, rec_res, clar_score, llm_instance = await analyze_document_with_langchain(
         extracted_text,
-        document_type="report"  # Defaulting to "report", can be parameterized later
+        document_type=doc_type # Use the passed doc_type
     )
     document_analysis_time = time.time() - start_document_analysis
     print(f"Time to analyze document: {document_analysis_time:.2f} seconds")
@@ -121,7 +131,7 @@ async def validate_image_quickly(image_bytes: bytes):
     # This returns a dict with "accepted", "error", and optionally "data" and "get_keywords"
     start_acceptance_processing = time.time()
     acceptance_output = await process_document_acceptance(
-        extracted_text, val_res, rec_res, clar_score, llm_instance
+        extracted_text, val_res, rec_res, clar_score, llm_instance, doc_type # Pass doc_type
     )
     acceptance_processing_time = time.time() - start_acceptance_processing
     print(
@@ -137,7 +147,7 @@ async def upload_image(file: UploadFile, doc_type: str = "Clinical Report"):
 
     # Measure time for extract_text_and_keypoints
     start_extract_time = time.time()
-    result, extracted_text = await validate_image_quickly(image_bytes)
+    result, extracted_text = await validate_image_quickly(image_bytes, doc_type)
     extract_time = time.time() - start_extract_time
     print(f"Time to validate image: {extract_time:.2f} seconds")
 
@@ -180,7 +190,7 @@ async def process_image_properly(image_id: str, image_bytes: Optional[bytes], co
 
         # Step 1: Extract text and keypoints
         start_extract_time = time.time()
-        result = await extract_text_and_keypoints_properly(image_bytes, content_type)
+        result = await extract_text_and_keypoints_properly(image_bytes, content_type, doc_type)
         extract_time = time.time() - start_extract_time
         print(
             f"Time to extract text and keypoints: {extract_time:.2f} seconds")
